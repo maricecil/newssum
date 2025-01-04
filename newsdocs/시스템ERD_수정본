@@ -1,0 +1,111 @@
+Table Category {
+  id bigint [pk, increment]
+  name varchar(50) [not null, note: '카테고리명']
+  code varchar(20) [unique, not null, note: '카테고리 코드']
+  parent_id bigint [null, note: '상위 카테고리, 무결성조건걸기'] //변경됨
+  order int [default: 0, note: '정렬 순서']
+  is_active boolean [default: true, note: '활성화 상태']
+}
+
+Table NewsCompany {
+  id bigint [pk, increment, note: 'index'] // 변경됨
+  url varchar(255) [not null, note: '메인 URL']
+  name varchar(100) [not null, note: '신문사명']
+  code varchar(20) [unique, not null, note: '신문사 코드']
+  is_active boolean [default: true, note: '활성화 상태']
+  created_at timestamp [default: `now()`, note: '등록일시']
+}
+
+Table Article {
+  id bigint [pk, increment]
+  category_id bigint [note: '카테고리']
+  news_company_id bigint [note: '신문사'] //인덱스 추가 고려
+  title varchar(200) [not null, note: '기사 제목'] //인덱스 추가 고려
+  content text [not null, note: '기사 본문'] //인덱스 추가 고려
+  url varchar(255) [unique, not null, note: '원본 URL']
+  published_at timestamp [not null, note: '발행일시']
+  created_at timestamp [default: `now()`, note: '수집일시']
+  updated_at timestamp [note: '수정일시']
+  view_count int [default: 0, note: '조회수']
+  is_active boolean [default: true, note: '활성화 상태']
+}
+
+Table ArticleRank {
+  id bigint [pk, increment]
+  article_id bigint [note: '기사']
+  rank_type enum('daily', 'weekly') [not null, note: '순위 유형(일간/주간)'] // 변경됨
+  rank_position int [not null, note: '순위']
+}
+
+Table CrawlingLog {
+  id bigint [pk, increment]
+  news_company_id bigint [note: '신문사']
+  status enum('success', 'failure') [not null, note: '상태(성공/실패)'] // 변경됨
+  articles_count int [default: 0, note: '수집 기사 수']
+  error_message text [null, note: '마지막 에러 메시지']
+  retry_count int [default: 0, note: '재시도 횟수'] // 추가됨
+  started_at timestamp [not null, note: '시작 시간']
+  finished_at timestamp [not null, note: '종료 시간']
+}
+
+Table User {
+  id bigint [pk, increment]
+  username varchar(150) [unique, not null]
+  email varchar(254) [unique, not null]
+  password varchar(128) [not null]
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+}
+
+Table UserArticle {
+  id bigint [pk, increment]
+  user_id bigint [note: '사용자']
+  article_id bigint [note: '기사']
+  is_read boolean [default: false, note: '읽음 여부']
+  created_at timestamp [default: `now()`, note: '등록일시']
+}
+
+Table Keyword {
+  id bigint [pk, increment]
+  word varchar(50) [not null, note: '키워드']
+  created_at timestamp [default: `now()`]
+}
+
+Table ArticleKeyword {
+  id bigint [pk, increment]
+  article_id bigint [not null, note: '기사 ID, index'] // 변경됨
+  keyword_id bigint [not null, note: '키워드 ID, index'] // 변경됨
+  frequency int [default: 1, note: '출현 빈도']
+}
+
+Table ArticleSummary {
+  id bigint [pk, increment]
+  article_id bigint [note: '기사']
+  summary text [not null, note: 'AI 생성 요약']
+  created_at timestamp [default: `now()`]
+}
+
+Table UserActivity {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  session_id varchar(100) [not null]
+  activity_type varchar(50) [not null, note: 'view/summary/search']
+  target_type varchar(50) [not null, note: 'article/keyword']
+  target_id bigint [not null]
+  created_at timestamp [default: `now()`]
+}
+
+//서치로그테이블 삭제 
+
+// 관계 정의
+Ref: Category.parent_id > Category.id
+Ref: Article.category_id > Category.id
+Ref: Article.news_company_id > NewsCompany.id
+Ref: ArticleRank.article_id > Article.id
+Ref: CrawlingLog.news_company_id > NewsCompany.id
+Ref: UserArticle.user_id > User.id
+Ref: UserArticle.article_id > Article.id
+Ref: ArticleSummary.article_id > Article.id
+Ref: UserActivity.user_id > User.id
+Ref: ArticleKeyword.article_id > Article.id // 추가됨
+Ref: ArticleKeyword.keyword_id > Keyword.id // 추가됨

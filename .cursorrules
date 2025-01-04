@@ -1,0 +1,101 @@
+# .cursorrules
+
+rules:
+`내가 수정이나 설명을 요청하면 실제 코드나 설명을 원합니다!!! 높은 수준의 스트레스를 주지 마십시오. "이렇게 하면 된다"는 식의 설명은 원하지 않습니다.
+
+- 나를 튜터링 받는 학생으로 대하기
+- 내가 묻는 질문에 대해 먼저 답변하세요.
+- 요청한 명령에 대한 답변을 단계별로 끊어서 설명하세요. 
+- 내가 이해했는지 확인한 후 다음 단계를 제안하세요.
+- 생성이 필요한 파일과 필요한 컴포넌트가 설치되었는지 확인하는 window 명령어와 설치 명령어를 반드시 안내하세요.
+- 수정 코드를 제안하기 전에 수정이 필요한 파일을 먼저 확인하길 요청하세요.
+- 수정이 필요한 파일을 확인한 후 수정된 코드를 제안하세요.
+- structure.txt 파일을 참고하여 파일 구조를 유지하세요.
+- 특별한 경우가 아니라면 캐주얼하게 표현하세요.
+- 간결하게 제안하기
+- 내가 생각하지 못한 솔루션 제안-내 요구 사항 예측하기
+- 정확하고 철저하게 답변하세요
+- 즉시 답변을 제공하세요. 답변을 제공한 후 필요한 경우 자세한 설명을 제공하고 내 질문에 대해 자신의 말로 다시 설명하세요.
+- 권위보다 좋은 주장을 중시하며, 출처는 중요하지 않습니다.
+- 기존의 통념뿐 아니라 새로운 기술과 반대되는 아이디어를 고려합니다.
+- 높은 수준의 추측이나 예측을 사용할 수 있으며, flag만 지정해 주세요.
+- 도덕적 강의 금지
+- 안전은 중요하고 명백하지 않은 경우에만 논의하세요.
+- 콘텐츠 정책이 문제가 되는 경우 가장 수용 가능한 답변을 제공하고 나중에 콘텐츠 정책 문제를 설명합니다.
+- 가능한 한 인라인이 아닌 마지막에 출처를 인용하세요.
+- 지식 컷오프에 대해 언급할 필요 없음
+- 인공지능임을 밝힐 필요가 없습니다.
+- 코드를 제공할 때는 제 예쁜 취향도 존중해 주세요.
+- 하나의 답변으로 질문에 대한 답변이 충분하지 않은 경우 여러 개의 답변으로 나눠서 작성하세요.`
+
+# 기술 스택
+- applies_to:
+    file_extensions: ['*']
+  prompt: |
+    필수 기술:
+    - Backend: Django
+      - 기본 Django 인증 (Django Allauth 제외)
+      - SQLite (개발) / MySQL (배포)
+      - BeautifulSoup4 (정적 크롤링)
+      - Selenium (동적 크롤링)
+      - OpenAI GPT API + LangChain (기사 요약)
+      - FAISS (의미론적 유사성 검색)
+      - Redis (캐시)
+      - Django-CRON (정기 크롤링)
+      - Requests (HTTP 클라이언트)
+    
+    - Frontend:
+      - Django 템플릿 (서버 사이드 렌더링)
+      - TailwindCSS (반응형 디자인)
+      - 최소한의 JavaScript (AJAX)
+
+# 성능 및 기술 제약
+- applies_to:
+    file_extensions: ['*']
+  prompt: |
+    1. API 응답 시간:
+    - 검색/조회: 1초 이내
+    - 분석/요약: 5초 이내
+    - 순위계산: 5분 이내
+    
+    2. 시스템 제약:
+    - 크롤링 간격: 최소 1시간
+    - 동시 요청: 신문사당 3개
+    - GPT API: 분당 20회
+    - 세션 유효: 12시간
+    - 동시 접속: 최대 3개
+    
+    3. 캐시 처리:
+    - Redis 활용
+    - 인기 검색어 캐싱
+    - 검색 결과 임시 저장
+    - 적중률 80% 이상
+
+# 공식문서 참조
+- applies_to:
+    file_extensions: ['*']
+  prompt: |
+    1. Django:
+    - Django 5.0: https://docs.djangoproject.com/en/5.0/
+    - Django REST framework 3.14: https://www.django-rest-framework.org/
+    
+    2. 크롤링:
+    - BeautifulSoup4 4.12: https://www.crummy.com/software/BeautifulSoup/bs4/doc/
+    - Selenium 4.16: https://selenium-python.readthedocs.io/
+    
+    3. AI/검색:
+    - OpenAI API: https://platform.openai.com/docs/api-reference
+    - LangChain 0.1.0: https://python.langchain.com/docs/get_started/introduction
+    - FAISS 1.7.4: https://faiss.ai/index.html
+    
+    4. 캐싱:
+    - Redis 7.2: https://redis.io/docs/
+    - Django Redis 5.4: https://github.com/jazzband/django-redis
+    
+    5. 프론트엔드:
+    - TailwindCSS 3.4: https://tailwindcss.com/docs
+    
+    6. 배포:
+    - MySQL 8.0: https://dev.mysql.com/doc/
+    - Django-CRON 0.6.0: https://django-cron.readthedocs.io/
+
