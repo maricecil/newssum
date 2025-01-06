@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>뉴스 모아보기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-white shadow-lg">
+        <div class="w-full px-32">
+            <div class="flex justify-between">
+                <div class="flex space-x-7">
+                    <a href="{% url 'news:news_list' %}" class="flex items-center py-4">
+                        <span class="font-semibold text-gray-500 text-lg">뉴스 모아보기</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="w-full px-32 py-2">
+        {% block content %}
+        {% endblock %}
+    </main>
+</body>
+</html> 
