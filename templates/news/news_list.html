@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="w-full px-2">
+    <!-- 새로고침 버튼 -->
+    <div class="flex justify-end mb-2">
+        <div class="flex items-center gap-2">
+            <span id="countdown">05:00</span>
+            <button onclick="location.reload()" class="px-4 py-2 bg-blue-500 text-white rounded-lg">
+                새로고침
+            </button>
+        </div>
+    </div>
+
+    <!-- 일간/주간 주요 뉴스 섹션 -->
+    <div class="mb-3">
+        <div class="flex justify-between gap-8">
+            <!-- 실시간 주요 뉴스 -->
+            <div class="flex-1">
+                <div class="flex justify-between items-center mb-2">
+                    <h1 class="text-xl font-bold">실시간 주요 뉴스</h1>
+                </div>
+                <div class="grid gap-1">
+                    {% for item in daily_rankings %}
+                    <div class="bg-white rounded shadow-sm p-2">
+                        <div class="flex flex-col gap-1">
+                            <span class="text-base font-bold text-blue-600">{{ item.company_name }}</span>
+                            <a href="{{ item.url }}" target="_blank" class="text-base hover:text-blue-600">{{ item.title }}</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 주요 키워드 -->
+            <div class="flex-1">
+                <div class="flex justify-between items-center mb-2">
+                    <h1 class="text-xl font-bold">중요 키워드</h1>
+                </div>
+                <div class="grid gap-1">
+                    {% for keyword, count, group in keyword_rankings %}
+                    <div class="bg-white rounded shadow-sm p-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base font-bold w-4">{{ forloop.counter }}</span>
+                                <span class="text-base">{{ keyword }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 실시간 랭킹 섹션 -->
+    <div class="mt-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">실시간 랭킹</h1>
+        </div>
+        
+        {% regroup news_items by company_name as news_by_company %}
+        
+        <div class="grid grid-cols-4 gap-3">
+            {% for company in news_by_company %}
+            <div class="bg-white rounded-lg shadow p-2">
+                <div class="flex items-center gap-3 mb-2 bg-gray-50 -mx-2 -mt-2 p-2">
+                    <div class="w-10 h-10 overflow-hidden rounded-full bg-white flex items-center justify-center">
+                        <img src="{% static 'images/logos/'|add:company.grouper|add:'.png' %}" 
+                             alt="{{ company.grouper }}"
+                             class="{% if company.grouper in '세계일보,중앙일보,한겨레,한국일보' %}w-16 h-16{% else %}w-8 h-8{% endif %} object-contain"
+                        />
+                    </div>
+                    <h2 class="text-base font-bold">{{ company.grouper }}</h2>
+                </div>
+                <div class="space-y-2.5">
+                    {% for item in company.list %}
+                    <div class="flex gap-2.5">
+                        <span class="text-sm font-bold {% if item.rank <= 3 %}text-blue-500{% else %}text-gray-300{% endif %} 
+                               w-4 flex-shrink-0 text-center">{{ item.rank }}</span>
+                        <a href="{{ item.url }}" target="_blank" 
+                           class="text-sm hover:text-blue-600 leading-5 line-clamp-2 
+                                  {% if item.rank <= 3 %}text-gray-900{% else %}text-gray-600{% endif %}">
+                            {{ item.title }}
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+// 5분 카운트다운 타이머
+function startCountdown() {
+    let timeLeft = 900; // 5분(300)에서 15분(900)으로 수정
+    
+    function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        
+        document.getElementById('countdown').textContent = 
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        if (timeLeft <= 0) {
+            location.reload();
+        } else {
+            timeLeft--;
+        }
+    }
+    
+    updateTimer();
+    setInterval(updateTimer, 1000);
+}
+
+startCountdown();
+</script>
+{% endblock %} 
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/timer.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        startCountdown();
+    });
+</script>
+{% endblock %} 
