@@ -23,11 +23,6 @@ def atomic_cache(func):
         return result
     return wrapper
 
-def clean_title(title):
-    # 앞에 붙은 숫자와 점, 공백 제거
-    # 예: "1. 제목" -> "제목"
-    return re.sub(r'^\d+\.?\s*', '', title)
-
 @atomic_cache
 def news_list(request):
     cached_data = cache.get('news_data')
@@ -36,8 +31,6 @@ def news_list(request):
     
     # 캐시 타임아웃(15분) 체크
     if cached_data and last_update and (now - last_update).seconds < 900:
-        for item in cached_data['news_items']:
-            item['title'] = clean_title(item['title'])
         return render(request, 'news/news_list.html', cached_data)
     
     # settings에서 캐시 타임아웃 가져오기
@@ -53,10 +46,6 @@ def news_list(request):
         df = df.sort_values(['company_name', 'rank'])
         news_items = df.to_dict('records')
         
-        # 제목에서 숫자 제거
-        for item in news_items:
-            item['title'] = clean_title(item['title'])
-            
         all_titles = [item['title'] for item in news_items]
         current_keywords = extract_keywords(all_titles)
         
@@ -87,14 +76,23 @@ def news_list(request):
         titles=all_titles
     )
     
+    # news_by_company 딕셔너리 생성 추가
+    news_by_company = {}
+    for item in news_items:
+        company = item['company_name']
+        if company not in news_by_company:
+            news_by_company[company] = []
+        news_by_company[company].append(item)
+    
     context = {
         'news_items': news_items,
         'daily_rankings': daily_rankings,
         'keyword_rankings': keyword_rankings,
         'previous_keywords': previous_keywords,
         'last_update': last_update,
-        'refresh_interval': settings.CACHES['default']['TIMEOUT'],  # 캐시 타임아웃 전달
-        'llm_analysis': llm_analysis,  # LLM 분석 결과 추가
+        'refresh_interval': settings.CACHES['default']['TIMEOUT'],
+        'llm_analysis': llm_analysis,
+        'news_by_company': news_by_company,
     }
     
     # 언론사별 키워드 분석 추가
@@ -120,6 +118,22 @@ def news_list(request):
     cache.set('news_data', context, timeout=CACHE_TIMEOUT)
     cache.set('last_update', now, timeout=CACHE_TIMEOUT)
     
+    if request.resolver_match.url_name == 'top_articles':
+        # 제목 리스트 추출
+        titles = []
+        for company, articles in news_by_company.items():
+            titles.extend([article.title for article in articles])
+        
+        # LLM 분석 추가
+        llm_analysis = analyze_keywords_with_llm(
+            keywords_with_counts=keyword_rankings,
+            titles=titles
+        )
+        
+        context.update({
+            'llm_analysis': llm_analysis,
+        })
+
     return render(request, 'news/news_list.html', context)
 
 def keyword_analysis(request, keyword=None):
@@ -232,3 +246,29 @@ def top_articles(request):
     }
     
     return render(request, 'news/news_list.html', context) 
+
+def news_summary(request):
+    # 기존 코드...
+    articles = Article.objects.filter(
+        created_at__gte=timezone.now() - timezone.timedelta(hours=24)
+    ).order_by('-created_at')
+    
+    # 제목 리스트 추출
+    titles = [article.title for article in articles]
+    
+    # 키워드 추출
+    keyword_rankings = extract_keywords(titles, limit=10)
+    
+    # LLM 분석 추가
+    llm_analysis = analyze_keywords_with_llm(
+        keywords_with_counts=keyword_rankings,
+        titles=titles
+    )
+    
+    context = {
+        'articles': articles,
+        'keyword_rankings': keyword_rankings,
+        'llm_analysis': llm_analysis,  # LLM 분석 결과 추가
+    }
+    
+    return render(request, 'news/news_summary.html', context) 

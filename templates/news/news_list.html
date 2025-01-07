@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load news_filters %}
 
 {% block content %}
 <div class="w-full px-2">
@@ -16,7 +17,7 @@
     {% if request.resolver_match.url_name == 'top_articles' %}
         <div class="w-full">
             <!-- 상단 영역을 2단 그리드로 분할 -->
-            <div class="grid grid-cols-2 gap-8 mb-8">
+            <div class="grid grid-cols-2 gap-8">
                 <!-- 필터링 결과 섹션 (왼쪽) -->
                 <div class="w-full">
                     <h1 class="text-2xl font-bold mb-4">
@@ -26,6 +27,7 @@
                     <div class="bg-white rounded-lg shadow p-4">
                         <div class="flex gap-4 mb-4">
                             <select id="companyFilter" class="border rounded-lg px-3 py-2 text-sm">
+                                <option value="" selected>선택없음</option>
                                 <option value="all">전체 언론사</option>
                                 {% for company, articles in news_by_company.items %}
                                 <option value="{{ company }}">{{ company }}</option>
@@ -33,6 +35,7 @@
                             </select>
                             
                             <select id="keywordFilter" class="border rounded-lg px-3 py-2 text-sm">
+                                <option value="" selected>선택없음</option>
                                 <option value="all">전체 키워드</option>
                                 {% for keyword, articles in keyword_articles.items %}
                                 <option value="{{ keyword }}">{{ keyword }}</option>
@@ -45,14 +48,47 @@
                     </div>
                 </div>
 
-                <!-- 오른쪽 영역 (새로운 기능을 위한 공간) -->
+                <!-- AI 분석 결과 섹션 (오른쪽) -->
                 <div class="w-full">
-                    <!-- 새로운 기능이 이곳에 추가될 예정 -->
+                    <h1 class="text-2xl font-bold mb-4">AI 트렌드 분석</h1>
+                    <div class="bg-white rounded-lg shadow p-4">
+                        {% if llm_analysis %}
+                            <div class="prose max-w-none space-y-4">
+                                <!-- 주요 트렌드 섹션 -->
+                                <div>
+                                    <h3 class="text-lg font-semibold flex items-center text-blue-600">
+                                        <span class="mr-2">🔍</span>주요 트렌드
+                                    </h3>
+                                    <p class="text-gray-700 ml-6">{{ llm_analysis.trends|default:"분석 준비중..." }}</p>
+                                </div>
+
+                                <!-- 키워드 연관성 섹션 -->
+                                <div>
+                                    <h3 class="text-lg font-semibold flex items-center text-green-600">
+                                        <span class="mr-2">🔗</span>키워드 연관성
+                                    </h3>
+                                    <p class="text-gray-700 ml-6">{{ llm_analysis.relations|default:"분석 준비중..." }}</p>
+                                </div>
+
+                                <!-- 특이사항 섹션 -->
+                                <div>
+                                    <h3 class="text-lg font-semibold flex items-center text-purple-600">
+                                        <span class="mr-2">💡</span>특이사항
+                                    </h3>
+                                    <p class="text-gray-700 ml-6">{{ llm_analysis.insights|default:"분석 준비중..." }}</p>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="text-gray-500 text-center py-4">
+                                <p>분석 준비중입니다...</p>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
             <!-- 하단의 기존 섹션들 -->
-            <div class="grid grid-cols-2 gap-8">
+            <div class="grid grid-cols-2 gap-8 mt-8">
                 <!-- 언론사별 주요 기사 섹션 -->
                 <div class="w-full">
                     <h1 class="text-2xl font-bold mb-4">
@@ -112,19 +148,19 @@
                         <span class="text-gray-500">({{ total_keyword_articles }}건)</span>
                     </h1>
                     
-                    <div class="space-y-4">
+                    <div class="space-y-2">
                         {% for keyword, articles in keyword_articles.items %}
                         <div class="bg-white rounded-lg shadow p-3">
-                            <div class="flex items-center gap-2 mb-2 pb-2 border-b">
-                                <span class="text-lg font-bold text-blue-600">"{{ keyword }}" 관련</span>
+                            <div class="flex items-center gap-2 mb-2 pb-2 border-b whitespace-nowrap">  <!-- whitespace-nowrap 추가 -->
+                                <span class="text-lg font-bold text-blue-600 flex-shrink-0">"{{ keyword }}" 관련</span>  <!-- flex-shrink-0 추가 -->
                                 <span class="text-sm text-gray-500">({{ articles|length }}건)</span>
                             </div>
                             <div class="space-y-2">
                                 {% for article in articles %}
-                                <div class="flex gap-2">
-                                    <span class="text-sm text-gray-400">{{ article.company_name }}</span>
+                                <div class="flex gap-2 whitespace-nowrap overflow-hidden">  <!-- 컨테이너에 whitespace-nowrap 추가 -->
+                                    <span class="text-sm text-gray-400 flex-shrink-0">{{ article.company_name }}</span>
                                     <a href="{{ article.url }}" target="_blank" 
-                                       class="text-sm hover:text-blue-600 flex-1">
+                                       class="text-sm hover:text-blue-600 truncate">  <!-- flex-1 제거하고 truncate 추가 -->
                                         {{ article.title }}
                                     </a>
                                 </div>
@@ -222,11 +258,11 @@
                         {% for keyword, count, keyword_group in keyword_rankings %}
                         <div class="bg-white rounded shadow-sm p-2">
                             <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2 w-24">
+                                <div class="flex items-center gap-2 w-32">
                                     <span class="text-base font-bold w-4">{{ forloop.counter }}</span>
                                     <a href="{% url 'news:keyword_articles' keyword=keyword %}" 
                                        class="text-blue-600 hover:text-blue-800 text-base font-medium 
-                                              transition-colors flex items-center gap-1">
+                                              transition-colors flex items-center gap-1 whitespace-nowrap">
                                         {{ keyword }}
                                         <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -292,29 +328,6 @@
                 {% endfor %}
             </div>
         </div>
-
-        <!-- 기존 키워드 랭킹 섹션 아래에 추가 -->
-        {% if llm_analysis %}
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800">AI 분석 결과</h2>
-            
-            <div class="prose max-w-none">
-                {% for line in llm_analysis.split('\n') %}
-                    {% if line|length > 0 %}
-                        {% if '1. 주요 트렌드:' in line %}
-                            <h3 class="text-lg font-semibold text-blue-600 mt-4">🔍 주요 트렌드</h3>
-                        {% elif '2. 키워드 간 연관성:' in line %}
-                            <h3 class="text-lg font-semibold text-green-600 mt-4">🔗 키워드 연관성</h3>
-                        {% elif '3. 특이사항:' in line %}
-                            <h3 class="text-lg font-semibold text-purple-600 mt-4">💡 특이사항</h3>
-                        {% else %}
-                            <p class="text-gray-700 ml-4 my-2">{{ line }}</p>
-                        {% endif %}
-                    {% endif %}
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
     {% endif %}
 </div>
 

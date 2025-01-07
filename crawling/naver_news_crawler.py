@@ -70,6 +70,11 @@ class NaverNewsCrawler:
             
             for idx, article in enumerate(articles, 1):
                 try:
+                    # 순위 요소 찾기
+                    rank_num = article.select_one('.list_ranking_num')
+                    if rank_num:
+                        rank_num.decompose()  # 순위 텍스트 제거
+                    
                     title = article.get_text(strip=True)
                     url = article['href']
                     

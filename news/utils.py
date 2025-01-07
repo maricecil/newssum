@@ -15,6 +15,12 @@ JOSA_PATTERNS = [
     r'(?<=[\가-힣])(이|가|은|는|을|를|의|와|과|도|만|에|야|아|여)(?=\s|$)'
 ]
 
+# 전역 Okt 객체 아래에 복합명사 패턴 추가
+COMPOUND_PATTERNS = [
+    r'([가-힣]+)(처|청)(?=\s|$)',  # 기관
+    r'([가-힣]+)(처장|청장)(?=\s|$)',  # 직책
+]
+
 def extract_keywords(titles, limit=10, keywords_per_title=3):
     all_nouns = []
     stop_words = {
@@ -61,7 +67,16 @@ def extract_keywords(titles, limit=10, keywords_per_title=3):
         title_nouns = []
         working_title = title
         
-        # 조사 제거 전처리 추가 (기존 대괄호 제거 전)
+        # 1. 복합명사 우선 추출 (조사 제거 전에)
+        for pattern in COMPOUND_PATTERNS:
+            matches = re.finditer(pattern, working_title)
+            for match in matches:
+                compound_word = match.group(0)
+                if compound_word not in stop_words:
+                    title_nouns.append(compound_word)
+                    working_title = working_title.replace(match.group(0), '■' * len(match.group(0)))
+        
+        # 2. 기존 조사 제거 로직
         for pattern in JOSA_PATTERNS:
             working_title = re.sub(pattern, '', working_title)
         
@@ -203,21 +218,24 @@ def analyze_keywords_with_llm(keywords_with_counts, titles):
     """
     키워드와 제목들을 LLM으로 분석
     """
-    # 키워드와 빈도수 정보 포맷팅
-    keyword_info = [f"{k}({c}회)" for k, c, _ in keywords_with_counts]
+    # 키워드 정보 제한 (상위 10개만)
+    keyword_info = [f"{k}({c}회)" for k, c, _ in keywords_with_counts[:10]]
+    
+    # 제목 수 제한 (최근 20개만)
+    limited_titles = titles[:20]
     
     template = """
-    다음 뉴스 제목들과 추출된 키워드들을 분석해주세요:
+    다음 뉴스 제목들과 상위 키워드들을 간단히 분석해주세요:
 
-    [키워드 (빈도수)]
+    [상위 키워드]
     {keywords}
 
-    [뉴스 제목들]
+    [최근 주요 제목]
     {titles}
 
-    다음 형식으로 간단히 답변해주세요:
+    간단히 답변해주세요:
     1. 주요 트렌드:
-    2. 키워드 간 연관성:
+    2. 키워드 연관성:
     3. 특이사항:
     """
     
@@ -228,13 +246,14 @@ def analyze_keywords_with_llm(keywords_with_counts, titles):
     
     llm = OpenAI(
         temperature=0.3,
-        openai_api_key=settings.OPENAI_API_KEY
+        openai_api_key=settings.OPENAI_API_KEY,
+        max_tokens=256  # 응답 길이 제한
     )
     chain = LLMChain(llm=llm, prompt=prompt)
     
     response = chain.run({
         "keywords": "\n".join(keyword_info),
-        "titles": "\n".join(titles)
+        "titles": "\n".join(limited_titles)
     })
     
     return response 
