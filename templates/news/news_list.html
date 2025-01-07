@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="w-full px-2">
-    <!-- 새로고침 버튼 -->
+    <!-- 새로고침 버튼 (공통) -->
     <div class="flex justify-end mb-2">
         <div class="flex items-center gap-2">
             <span id="countdown">05:00</span>
@@ -13,84 +13,309 @@
         </div>
     </div>
 
-    <!-- 일간/주간 주요 뉴스 섹션 -->
-    <div class="mb-3">
-        <div class="flex justify-between gap-8">
-            <!-- 실시간 주요 뉴스 -->
-            <div class="flex-1">
-                <div class="flex justify-between items-center mb-2">
-                    <h1 class="text-xl font-bold">실시간 주요 뉴스</h1>
-                </div>
-                <div class="grid gap-1">
-                    {% for item in daily_rankings %}
-                    <div class="bg-white rounded shadow-sm p-2">
-                        <div class="flex flex-col gap-1">
-                            <span class="text-base font-bold text-blue-600">{{ item.company_name }}</span>
-                            <a href="{{ item.url }}" target="_blank" class="text-base hover:text-blue-600">{{ item.title }}</a>
+    {% if request.resolver_match.url_name == 'top_articles' %}
+        <div class="w-full">
+            <!-- 상단 영역을 2단 그리드로 분할 -->
+            <div class="grid grid-cols-2 gap-8 mb-8">
+                <!-- 필터링 결과 섹션 (왼쪽) -->
+                <div class="w-full">
+                    <h1 class="text-2xl font-bold mb-4">
+                        필터링 결과
+                        <span class="text-gray-500" id="filteredCount"></span>
+                    </h1>
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex gap-4 mb-4">
+                            <select id="companyFilter" class="border rounded-lg px-3 py-2 text-sm">
+                                <option value="all">전체 언론사</option>
+                                {% for company, articles in news_by_company.items %}
+                                <option value="{{ company }}">{{ company }}</option>
+                                {% endfor %}
+                            </select>
+                            
+                            <select id="keywordFilter" class="border rounded-lg px-3 py-2 text-sm">
+                                <option value="all">전체 키워드</option>
+                                {% for keyword, articles in keyword_articles.items %}
+                                <option value="{{ keyword }}">{{ keyword }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="filteredArticles" class="space-y-2">
+                            <!-- 필터링된 결과가 여기에 표시됩니다 -->
                         </div>
                     </div>
-                    {% endfor %}
+                </div>
+
+                <!-- 오른쪽 영역 (새로운 기능을 위한 공간) -->
+                <div class="w-full">
+                    <!-- 새로운 기능이 이곳에 추가될 예정 -->
                 </div>
             </div>
 
-            <!-- 주요 키워드 -->
-            <div class="flex-1">
-                <div class="flex justify-between items-center mb-2">
-                    <h1 class="text-xl font-bold">중요 키워드</h1>
+            <!-- 하단의 기존 섹션들 -->
+            <div class="grid grid-cols-2 gap-8">
+                <!-- 언론사별 주요 기사 섹션 -->
+                <div class="w-full">
+                    <h1 class="text-2xl font-bold mb-4">
+                        언론사별 주요 기사
+                        <span class="text-gray-500">({{ article_count }}건)</span>
+                    </h1>
+                    
+                    {% if news_by_company %}
+                        <!-- 언론사별 기사 표시 (간격 축소) -->
+                        <div class="space-y-2">  <!-- space-y-4에서 space-y-2로 변경 -->
+                            {% for company, articles in news_by_company.items %}
+                            <div class="bg-white rounded-lg shadow p-2" data-company="{{ company }}">  <!-- data-company 추가 -->
+                                <div class="flex items-center gap-1 mb-2 pb-1 border-b">  <!-- gap-2→gap-1, pb-2→pb-1 -->
+                                    <span class="text-lg font-bold text-blue-600">{{ company }}</span>
+                                    <span class="text-sm text-gray-500">({{ articles|length }}건)</span>
+                                </div>
+                                <div class="space-y-1.5">  <!-- space-y-2에서 space-y-1.5로 변경 -->
+                                    {% for article in articles %}
+                                    <div class="flex gap-1.5 article-item" data-keyword="{{ article.title }}">  <!-- article-item과 data-keyword 추가 -->
+                                        <span class="text-sm font-bold {% if article.rank <= 3 %}text-blue-500{% else %}text-gray-400{% endif %} w-4">  <!-- w-5에서 w-4로 변경 -->
+                                            {{ article.rank }}
+                                        </span>
+                                        <a href="{{ article.url }}" target="_blank" 
+                                           class="text-sm hover:text-blue-600 flex-1">
+                                            {{ article.title }}
+                                        </a>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <!-- 기존 기사 목록 표시 유지 -->
+                        <div class="space-y-4">
+                            {% for article in articles %}
+                            <div class="bg-white rounded-lg shadow p-4">
+                                <div class="flex flex-col gap-2">
+                                    <span class="text-base font-bold text-blue-600">{{ article.company_name }}</span>
+                                    <a href="{{ article.url }}" target="_blank" 
+                                       class="text-lg hover:text-blue-600">
+                                        {{ article.title }}
+                                    </a>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-gray-500 text-center py-8">관련 기사가 없습니다.</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
-                <div class="grid gap-1">
-                    {% for keyword, count, group in keyword_rankings %}
-                    <div class="bg-white rounded shadow-sm p-2">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span class="text-base font-bold w-4">{{ forloop.counter }}</span>
-                                <span class="text-base">{{ keyword }}</span>
+
+                <!-- 키워드별 주요 기사 섹션 -->
+                <div class="w-full">
+                    <h1 class="text-2xl font-bold mb-4">
+                        키워드별 주요 기사
+                        <span class="text-gray-500">({{ total_keyword_articles }}건)</span>
+                    </h1>
+                    
+                    <div class="space-y-4">
+                        {% for keyword, articles in keyword_articles.items %}
+                        <div class="bg-white rounded-lg shadow p-3">
+                            <div class="flex items-center gap-2 mb-2 pb-2 border-b">
+                                <span class="text-lg font-bold text-blue-600">"{{ keyword }}" 관련</span>
+                                <span class="text-sm text-gray-500">({{ articles|length }}건)</span>
+                            </div>
+                            <div class="space-y-2">
+                                {% for article in articles %}
+                                <div class="flex gap-2">
+                                    <span class="text-sm text-gray-400">{{ article.company_name }}</span>
+                                    <a href="{{ article.url }}" target="_blank" 
+                                       class="text-sm hover:text-blue-600 flex-1">
+                                        {{ article.title }}
+                                    </a>
+                                </div>
+                                {% endfor %}
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
-    </div>
+    {% elif keyword %}
+        <!-- 키워드 검색 결과 -->
+        <div class="mb-6 max-w-3xl ml-8">
+            <h1 class="text-2xl font-bold mb-4">
+                "{{ keyword }}" 관련 기사
+                <span class="text-gray-500">({{ article_count }}건)</span>
+            </h1>
+            
+            {% if news_by_company %}
+                <!-- 언론사별 기사 표시 (간격 축소) -->
+                <div class="space-y-2">  <!-- space-y-4에서 space-y-2로 변경 -->
+                    {% for company, articles in news_by_company.items %}
+                    <div class="bg-white rounded-lg shadow p-2">  <!-- p-3에서 p-2로 변경 -->
+                        <div class="flex items-center gap-1 mb-2 pb-1 border-b">  <!-- gap-2→gap-1, pb-2→pb-1 -->
+                            <span class="text-lg font-bold text-blue-600">{{ company }}</span>
+                            <span class="text-sm text-gray-500">({{ articles|length }}건)</span>
+                        </div>
+                        <div class="space-y-1.5">  <!-- space-y-2에서 space-y-1.5로 변경 -->
+                            {% for article in articles %}
+                            <div class="flex gap-1.5">  <!-- gap-2에서 gap-1.5로 변경 -->
+                                <span class="text-sm font-bold {% if article.rank <= 3 %}text-blue-500{% else %}text-gray-400{% endif %} w-4">  <!-- w-5에서 w-4로 변경 -->
+                                    {{ article.rank }}
+                                </span>
+                                <a href="{{ article.url }}" target="_blank" 
+                                   class="text-sm hover:text-blue-600 flex-1">
+                                    {{ article.title }}
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- 기존 기사 목록 표시 유지 -->
+                <div class="space-y-4">
+                    {% for article in articles %}
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex flex-col gap-2">
+                            <span class="text-base font-bold text-blue-600">{{ article.company_name }}</span>
+                            <a href="{{ article.url }}" target="_blank" 
+                               class="text-lg hover:text-blue-600">
+                                {{ article.title }}
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500 text-center py-8">관련 기사가 없습니다.</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
 
-    <!-- 실시간 랭킹 섹션 -->
-    <div class="mt-8">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold">실시간 랭킹</h1>
-        </div>
-        
-        {% regroup news_items by company_name as news_by_company %}
-        
-        <div class="grid grid-cols-4 gap-3">
-            {% for company in news_by_company %}
-            <div class="bg-white rounded-lg shadow p-2">
-                <div class="flex items-center gap-3 mb-2 bg-gray-50 -mx-2 -mt-2 p-2">
-                    <div class="w-10 h-10 overflow-hidden rounded-full bg-white flex items-center justify-center">
-                        <img src="{% static 'images/logos/'|add:company.grouper|add:'.png' %}" 
-                             alt="{{ company.grouper }}"
-                             class="{% if company.grouper in '세계일보,중앙일보,한겨레,한국일보' %}w-16 h-16{% else %}w-8 h-8{% endif %} object-contain"
-                        />
+    {% else %}
+        <!-- 실시간 뉴스 랭킹 (메인) -->
+        <div class="mb-3">
+            <div class="flex justify-between gap-8">
+                <!-- 실시간 주요 뉴스 섹션 -->
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <h1 class="text-xl font-bold">실시간 주요 뉴스</h1>
+                        <span class="text-sm text-gray-500">
+                            ({{ last_update|date:'Y.m.d H:i' }} 기준)
+                        </span>
                     </div>
-                    <h2 class="text-base font-bold">{{ company.grouper }}</h2>
+                    <div class="grid gap-1">
+                        {% for item in daily_rankings %}
+                        <div class="bg-white rounded shadow-sm p-2">
+                            <div class="flex flex-col gap-1">
+                                <span class="text-base font-bold text-blue-600">{{ item.company_name }}</span>
+                                <a href="{{ item.url }}" target="_blank" class="text-base hover:text-blue-600">{{ item.title }}</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
-                <div class="space-y-2.5">
-                    {% for item in company.list %}
-                    <div class="flex gap-2.5">
-                        <span class="text-sm font-bold {% if item.rank <= 3 %}text-blue-500{% else %}text-gray-300{% endif %} 
-                               w-4 flex-shrink-0 text-center">{{ item.rank }}</span>
-                        <a href="{{ item.url }}" target="_blank" 
-                           class="text-sm hover:text-blue-600 leading-5 line-clamp-2 
-                                  {% if item.rank <= 3 %}text-gray-900{% else %}text-gray-600{% endif %}">
-                            {{ item.title }}
-                        </a>
+
+                <!-- 주요 키워드 섹션 -->
+                <div class="flex-1">
+                    <div class="flex justify-between items-center mb-2">
+                        <h1 class="text-xl font-bold">중요 키워드</h1>
                     </div>
-                    {% endfor %}
+                    <div class="grid gap-1">
+                        {% for keyword, count, keyword_group in keyword_rankings %}
+                        <div class="bg-white rounded shadow-sm p-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2 w-24">
+                                    <span class="text-base font-bold w-4">{{ forloop.counter }}</span>
+                                    <a href="{% url 'news:keyword_articles' keyword=keyword %}" 
+                                       class="text-blue-600 hover:text-blue-800 text-base font-medium 
+                                              transition-colors flex items-center gap-1">
+                                        {{ keyword }}
+                                        <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </a>
+                                </div>
+                                <!-- 슬라이더 컨테이너 수정: 간격 줄이고 너비 확장 -->
+                                <div class="relative w-[36rem] ml-1 overflow-hidden h-6">
+                                    <div id="keywordSlider{{ forloop.counter }}" class="flex flex-col transition-transform duration-500">
+                                        {% for item in news_items %}
+                                            {% if keyword in item.title %}
+                                            <div class="flex-shrink-0 h-6">
+                                                <a href="{{ item.url }}" target="_blank" class="text-sm text-gray-600 hover:text-blue-600 truncate block">
+                                                    {{ item.title }}
+                                                </a>
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
-            {% endfor %}
         </div>
-    </div>
+
+        <!-- 실시간 랭킹 섹션 -->
+        <div class="mt-8">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold">실시간 랭킹</h1>
+            </div>
+            
+            {% regroup news_items by company_name as news_by_company %}
+            
+            <div class="grid grid-cols-4 gap-3">
+                {% for company in news_by_company %}
+                <div class="bg-white rounded-lg shadow p-2">
+                    <div class="flex items-center gap-3 mb-2 bg-gray-50 -mx-2 -mt-2 p-2">
+                        <div class="w-10 h-10 overflow-hidden rounded-full bg-white flex items-center justify-center">
+                            <img src="{% static 'images/logos/'|add:company.grouper|add:'.png' %}" 
+                                 alt="{{ company.grouper }}"
+                                 class="{% if company.grouper in '세계일보,중앙일보,한겨레,한국일보' %}w-16 h-16{% else %}w-8 h-8{% endif %} object-contain"
+                            />
+                        </div>
+                        <h2 class="text-base font-bold">{{ company.grouper }}</h2>
+                    </div>
+                    <div class="space-y-2.5">
+                        {% for item in company.list %}
+                        <div class="flex gap-2.5">
+                            <span class="text-sm font-bold {% if item.rank <= 3 %}text-blue-500{% else %}text-gray-300{% endif %} 
+                                   w-4 flex-shrink-0 text-center">{{ item.rank }}</span>
+                            <a href="{{ item.url }}" target="_blank" 
+                               class="text-sm hover:text-blue-600 leading-5 line-clamp-2 
+                                      {% if item.rank <= 3 %}text-gray-900{% else %}text-gray-600{% endif %}">
+                                {{ item.title }}
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 기존 키워드 랭킹 섹션 아래에 추가 -->
+        {% if llm_analysis %}
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">AI 분석 결과</h2>
+            
+            <div class="prose max-w-none">
+                {% for line in llm_analysis.split('\n') %}
+                    {% if line|length > 0 %}
+                        {% if '1. 주요 트렌드:' in line %}
+                            <h3 class="text-lg font-semibold text-blue-600 mt-4">🔍 주요 트렌드</h3>
+                        {% elif '2. 키워드 간 연관성:' in line %}
+                            <h3 class="text-lg font-semibold text-green-600 mt-4">🔗 키워드 연관성</h3>
+                        {% elif '3. 특이사항:' in line %}
+                            <h3 class="text-lg font-semibold text-purple-600 mt-4">💡 특이사항</h3>
+                        {% else %}
+                            <p class="text-gray-700 ml-4 my-2">{{ line }}</p>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    {% endif %}
 </div>
 
 <script>
@@ -117,6 +342,115 @@ function startCountdown() {
 }
 
 startCountdown();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function initSlider(index) {
+        var slider = document.getElementById('keywordSlider' + index);
+        if (!slider) {
+            return;
+        }
+        
+        var slides = slider.children;
+        if (slides.length <= 1) {
+            return;
+        }
+        
+        var currentSlide = 0;
+        
+        setInterval(function() {
+            currentSlide = (currentSlide + 1) % slides.length;
+            slider.style.transform = 'translateY(-' + (currentSlide * 24) + 'px)';
+        }, 5000);
+    }
+
+    var keywordCount = "{{ keyword_rankings|length }}";
+    keywordCount = parseInt(keywordCount, 10);
+    
+    for (var i = 1; i <= keywordCount; i++) {
+        initSlider(i);
+    }
+});
+</script>
+
+<!-- 필터링 JavaScript 추가 -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const companyFilter = document.getElementById('companyFilter');
+    const keywordFilter = document.getElementById('keywordFilter');
+    const filteredArticles = document.getElementById('filteredArticles');
+    const filteredCount = document.getElementById('filteredCount');
+
+    function filterArticles() {
+        const selectedCompany = companyFilter.value;
+        const selectedKeyword = keywordFilter.value;
+        
+        // 언론사별 주요 기사 섹션에서 기사들을 가져옵니다
+        const articles = Array.from(document.querySelectorAll('.article-item'));
+        const filtered = articles.filter(article => {
+            const company = article.closest('[data-company]')?.dataset.company;
+            const title = article.dataset.keyword;
+            
+            const matchCompany = selectedCompany === 'all' || company === selectedCompany;
+            const matchKeyword = selectedKeyword === 'all' || (title && title.includes(selectedKeyword));
+            
+            return matchCompany && matchKeyword;
+        });
+
+        // 필터링된 결과를 표시
+        filteredArticles.innerHTML = filtered.map(article => {
+            const company = article.closest('[data-company]')?.dataset.company;
+            const link = article.querySelector('a');
+            return `
+                <div class="bg-white rounded-lg shadow p-2">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-base font-bold text-blue-600">${company}</span>
+                        <a href="${link.href}" target="_blank" 
+                           class="text-sm hover:text-blue-600">
+                            ${link.textContent}
+                        </a>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // 필터링된 결과 수 업데이트
+        filteredCount.textContent = `(${filtered.length}건)`;
+    }
+
+    // 필터 변경 시 자동 업데이트
+    companyFilter.addEventListener('change', filterArticles);
+    keywordFilter.addEventListener('change', filterArticles);
+
+    // 초기 로드시 전체 기사 표시
+    filterArticles();
+});
+</script>
+
+<script>
+document.getElementById('searchBtn').addEventListener('click', function() {
+    const company = document.getElementById('companyFilter').value;
+    const keyword = document.getElementById('keywordFilter').value;
+    
+    // 선택된 필터에 따라 기사 필터링
+    const companyCards = document.querySelectorAll('.company-card');
+    companyCards.forEach(card => {
+        const showByCompany = company === 'all' || card.dataset.company === company;
+        const keywordItems = card.querySelectorAll('.keyword-item');
+        
+        let showByKeyword = keyword === 'all';
+        if (!showByKeyword) {
+            keywordItems.forEach(item => {
+                if (item.dataset.keyword === keyword) {
+                    showByKeyword = true;
+                }
+            });
+        }
+        
+        card.style.display = (showByCompany && showByKeyword) ? 'block' : 'none';
+    });
+});
 </script>
 {% endblock %} 
 
