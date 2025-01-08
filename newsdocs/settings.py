@@ -103,6 +103,11 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
+        'crawling': {  # 크롤링 모듈의 로그
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
     },
 }
 

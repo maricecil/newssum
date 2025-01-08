@@ -11,6 +11,9 @@ import re
 from django.db.models import Q
 from .models import Article
 from django.utils import timezone
+import logging
+
+logger = logging.getLogger('news')  # Django 설정의 'news' 로거 사용
 
 # 크롤링 중복 방지를 위한 락
 crawling_lock = threading.Lock()
@@ -25,6 +28,7 @@ def atomic_cache(func):
 
 @atomic_cache
 def news_list(request):
+    print("=== 뉴스 목록 조회 시작 ===")  # 일단 print로 확인
     cached_data = cache.get('news_data')
     last_update = cache.get('last_update')
     now = datetime.now()
@@ -41,10 +45,12 @@ def news_list(request):
     last_update = datetime.now()
     
     if news_items is None:
+        print("크롤링 시작")  # 크롤링 시작 확인
         crawler = NaverNewsCrawler()
         df = crawler.crawl_all_companies()
         df = df.sort_values(['company_name', 'rank'])
         news_items = df.to_dict('records')
+        print(f"크롤링 완료: {len(news_items)}개 기사")  # 크롤링 결과 확인
         
         all_titles = [item['title'] for item in news_items]
         current_keywords = extract_keywords(all_titles)
@@ -54,7 +60,7 @@ def news_list(request):
         cache.set('news_rankings', news_items, timeout=CACHE_TIMEOUT)
     
     # 크롤링된 기사 수 출력
-    print(f"Total news items: {len(news_items)}")
+    logger.info(f"Total news items: {len(news_items)}")
     
     # 일간 주요 뉴스 준비 (각 신문사의 1위 기사)
     daily_rankings = [
