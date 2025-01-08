@@ -11,9 +11,7 @@ from datetime import datetime
 import time
 import logging
 
-# 로깅 설정
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('crawling')  # Django 설정의 'crawling' 로거 사용
 
 class NaverNewsCrawler:
     def __init__(self):
