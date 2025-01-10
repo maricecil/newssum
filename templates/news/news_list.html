@@ -174,27 +174,31 @@
                         <span class="text-gray-500">({{ total_keyword_articles }}건)</span>
                     </h1>
                     
-                    <div class="space-y-2">
+                    {% with shown_titles="" %}
                         {% for keyword, articles in keyword_articles.items %}
                         <div class="bg-white rounded-lg shadow p-3">
-                            <div class="flex items-center gap-2 mb-2 pb-2 border-b whitespace-nowrap">  <!-- whitespace-nowrap: 키워드 줄바꿈 방지 -->
-                                <span class="text-lg font-bold text-blue-600 flex-shrink-0">"{{ keyword }}" 관련</span>  <!-- flex-shrink-0: 키워드 축소 방지 -->
+                            <div class="flex items-center gap-2 mb-2 pb-2 border-b whitespace-nowrap">
+                                <span class="text-lg font-bold text-blue-600 flex-shrink-0">"{{ keyword }}" 관련</span>
                                 <span class="text-sm text-gray-500">({{ articles|length }}건)</span>
                             </div>
                             <div class="space-y-2">
                                 {% for article in articles %}
-                                <div class="flex gap-2 whitespace-nowrap overflow-hidden">  <!-- 기사 제목 한 줄 표시 설정 -->
-                                    <span class="text-sm text-gray-400 flex-shrink-0">{{ article.company_name }}</span>
-                                    <a href="{{ article.url }}" target="_blank" 
-                                       class="text-sm hover:text-blue-600 truncate">  <!-- truncate: 긴 제목 말줄임 처리 -->
-                                        {{ article.title }}
-                                    </a>
-                                </div>
+                                    {% is_duplicate article.title shown_titles as is_shown %}
+                                    {% if not is_shown %}
+                                        <div class="flex gap-2 whitespace-nowrap overflow-hidden">
+                                            <span class="text-sm text-gray-400 flex-shrink-0">{{ article.company_name }}</span>
+                                            <a href="{{ article.url }}" target="_blank" 
+                                               class="text-sm hover:text-blue-600 truncate">
+                                                {{ article.title }}
+                                            </a>
+                                        </div>
+                                        {% with shown_titles=shown_titles|add:article.title|add:"|||" %}{% endwith %}
+                                    {% endif %}
                                 {% endfor %}
                             </div>
                         </div>
                         {% endfor %}
-                    </div>
+                    {% endwith %}
                 </div>
             </div>
         </div>
@@ -297,16 +301,23 @@
                                 </div>
                                 <!-- 슬라이더 컨테이너 수정: 간격 줄이고 너비 확장 -->
                                 <div class="relative w-[36rem] ml-1 overflow-hidden h-6">
-                                    <div id="keywordSlider{{ forloop.counter }}" class="flex flex-col transition-transform duration-500">
-                                        {% for item in news_items %}
-                                            {% if keyword in item.title %}
-                                            <div class="flex-shrink-0 h-6">
-                                                <a href="{{ item.url }}" target="_blank" class="text-sm text-gray-600 hover:text-blue-600 truncate block">
-                                                    {{ item.title }}
-                                                </a>
-                                            </div>
-                                            {% endif %}
-                                        {% endfor %}
+                                    <div id="keywordSlider{{ forloop.counter }}" class="flex flex-col transition-all duration-700">
+                                        {% with shown_titles="" %}
+                                            {% for item in news_items %}
+                                                {% if keyword in item.title or keyword in item.related_keywords %}
+                                                    {% is_duplicate item.title shown_titles as is_shown %}
+                                                    {% if not is_shown %}
+                                                        <div class="flex-shrink-0 h-6">
+                                                            <a href="{{ item.url }}" target="_blank" 
+                                                               class="text-sm hover:text-blue-600 truncate block">
+                                                                <span class="text-gray-600">{{ item.title }}</span>
+                                                            </a>
+                                                        </div>
+                                                        {% with shown_titles=shown_titles|add:item.title|add:"|||" %}{% endwith %}
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endwith %}
                                     </div>
                                 </div>
                             </div>
@@ -358,33 +369,64 @@
 </div>
 
 <script>
-// 15분 카운트다운 타이머 구현
+// 15분 카운트다운 타이머 개선
 function startCountdown() {
-    let timeLeft = 900; // 15분 = 900초
+    // 서버의 마지막 업데이트 시간 가져오기
+    const lastUpdate = new Date("{{ last_update|date:'Y-m-d H:i:s' }}");
+    const now = new Date();
     
-    // 매 초마다 타이머 업데이트
+    // 경과 시간 계산 (초 단위)
+    const elapsedSeconds = Math.floor((now - lastUpdate) / 1000);
+    
+    // 남은 시간 계산 (15분 = 900초)
+    let timeLeft = Math.max(900 - elapsedSeconds, 0);
+    
+    // 이전 타이머 제거
+    if (window.countdownTimer) {
+        clearInterval(window.countdownTimer);
+    }
+    
     function updateTimer() {
         const minutes = Math.floor(timeLeft / 60);
         const seconds = timeLeft % 60;
         
-        // 타이머 표시 형식: MM:SS
-        document.getElementById('countdown').textContent = 
-            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const countdownElement = document.getElementById('countdown');
+        if (countdownElement) {
+            countdownElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // 시간에 따른 색상 변경
+            if (timeLeft <= 60) { // 1분 이하
+                countdownElement.classList.add('text-red-500');
+            } else if (timeLeft <= 180) { // 3분 이하
+                countdownElement.classList.add('text-yellow-500');
+            }
+        }
         
         // 시간이 다 되면 페이지 새로고침
         if (timeLeft <= 0) {
+            clearInterval(window.countdownTimer);
             location.reload();
         } else {
             timeLeft--;
         }
     }
     
-    // 초기 타이머 표시 및 1초마다 업데이트
+    // 초기 타이머 표시
     updateTimer();
-    setInterval(updateTimer, 1000);
+    
+    // 1초마다 업데이트하고 전역 변수로 저장
+    window.countdownTimer = setInterval(updateTimer, 1000);
 }
 
-startCountdown();
+// 페이지 로드 시 타이머 시작
+document.addEventListener('DOMContentLoaded', startCountdown);
+
+// 페이지가 백그라운드에서 포커스를 받으면 타이머 재동기화
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        startCountdown();
+    }
+});
 </script>
 
 <!-- 필터링 기능 구현 스크립트 -->
@@ -552,9 +594,9 @@ function handleKeywordChange(e) {
     const option = e.target.options[e.target.selectedIndex];
     if (option.value === "") return;
     
-    // 선택 제한 조건: 최대 3개까지만 선택 가능
-    if (selectedKeywordList.size >= 3 && !selectedKeywordList.has(option.value)) {
-        alert('최대 3개의 키워드만 선택할 수 있습니다.');
+    // 선택 제한 조건: 최대 5개까지만 선택 가능
+    if (selectedKeywordList.size >= 5 && !selectedKeywordList.has(option.value)) {
+        alert('최대 5개의 키워드만 선택할 수 있습니다.');
         option.selected = false;
         return;
     }
@@ -615,6 +657,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 초기 필터링 실행
     window.filterArticles();
+
+    // 키워드 슬라이더 초기화 추가
+    const keywordRankings = document.querySelectorAll('[id^="keywordSlider"]');
+    keywordRankings.forEach((slider, index) => {
+        initializeSlider(index + 1);
+    });
 });
 
 // 이벤트 핸들러 함수들
@@ -623,32 +671,107 @@ function handleCompanyChange(e) {
     // ... 기존 company change 핸들러 로직 ...
 }
 
-function handleKeywordChange(e) {
-    const option = e.target.options[e.target.selectedIndex];
-    if (option.value === "") return;
-    
-    // 선택 제한 조건: 최대 5개까지만 선택 가능
-    if (selectedKeywordList.size >= 5 && !selectedKeywordList.has(option.value)) {
-        alert('최대 5개의 키워드만 선택할 수 있습니다.');
-        option.selected = false;
-        return;
-    }
-    
-    if (option.selected) {
-        selectedKeywordList.add(option.value);
-    } else {
-        selectedKeywordList.delete(option.value);
-    }
-    
-    updateKeywordTags();
-    filterArticles();
-}
-
 function handleSearch() {
     const company = companyFilter.value;
     const keyword = keywordFilter.value;
     // ... 기존 검색 버튼 로직 ...
 }
+
+// 슬라이더 함수 추가
+function initializeSlider(index) {
+    const slider = document.getElementById(`keywordSlider${index}`);
+    if (!slider || slider.children.length <= 1) return;
+
+    let currentPosition = 0;
+    
+    setInterval(() => {
+        currentPosition = (currentPosition + 1) % slider.children.length;
+        slider.style.transform = `translateY(-${currentPosition * 24}px)`;
+    }, 5000);
+}
+</script>
+
+<!-- 키워드 슬라이더 독립 실행 수정 -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const sliders = {};  // 슬라이더 상태 관리 객체
+    const shownTitles = new Set();  // 이미 표시된 제목 추적
+    let currentSliderIndex = 1;  // 현재 활성화된 슬라이더 인덱스
+
+    // 키워드 순위대로 슬라이더 초기화
+    const initializeSliders = () => {
+        const shownTitles = new Set();  // 상위 랭크에서 표시된 제목 추적
+        
+        // 순위 순서대로 슬라이더 정렬
+        const keywordRankings = Array.from(document.querySelectorAll('[id^="keywordSlider"]'))
+            .sort((a, b) => {
+                const rankA = parseInt(a.id.replace('keywordSlider', ''));
+                const rankB = parseInt(b.id.replace('keywordSlider', ''));
+                return rankA - rankB;
+            });
+
+        // 1위부터 순차적으로 처리
+        keywordRankings.forEach((slider, index) => {
+            const rank = index + 1;
+            if (!slider || slider.children.length <= 1) return;
+
+            // 현재 키워드의 기사들 중 아직 보여지지 않은 것만 필터링
+            const validSlides = Array.from(slider.children).filter(slide => {
+                const title = slide.textContent.trim();
+                if (shownTitles.has(title)) {
+                    return false;  // 상위 랭크에서 이미 표시된 제목은 제외
+                }
+                shownTitles.add(title);  // 새로운 제목 추적에 추가
+                return true;
+            });
+
+            // 필터링된 슬라이드가 있는 경우만 저장
+            if (validSlides.length > 0) {
+                slider.innerHTML = '';  // 기존 내용 제거
+                validSlides.forEach(slide => slider.appendChild(slide));  // 필터링된 슬라이드만 추가
+                
+                sliders[rank] = {
+                    element: slider,
+                    currentPosition: 0,
+                    maxPosition: validSlides.length - 1
+                };
+            }
+        });
+    };
+
+    // 초기화 실행
+    initializeSliders();
+
+    // 순차적으로 슬라이더 실행
+    const rotateSliders = () => {
+        // 이전 슬라이더 리셋
+        if (sliders[currentSliderIndex]) {
+            sliders[currentSliderIndex].element.style.transform = 'translateY(0)';
+            sliders[currentSliderIndex].currentPosition = 0;
+        }
+
+        // 한 사이클이 끝나면 shownTitles 초기화
+        if (currentSliderIndex >= Object.keys(sliders).length) {
+            shownTitles.clear();  // 새로운 사이클 시작
+            currentSliderIndex = 0;  // 인덱스 초기화
+        }
+
+        // 다음 슬라이더로 이동
+        currentSliderIndex++;
+
+        // 현재 슬라이더 실행
+        if (sliders[currentSliderIndex] && sliders[currentSliderIndex].maxPosition > 0) {
+            const slider = sliders[currentSliderIndex];
+            slider.currentPosition = (slider.currentPosition + 1) % (slider.maxPosition + 1);
+            slider.element.style.transform = `translateY(-${slider.currentPosition * 24}px)`;
+        }
+    };
+
+    // 5초마다 순차적으로 슬라이더 실행
+    if (Object.keys(sliders).length > 0) {
+        setInterval(rotateSliders, 5000);
+    }
+});
 </script>
 {% endblock content %}
 
