@@ -3,6 +3,7 @@
 {% load news_filters %}
 
 {% block content %}
+{% csrf_token %}
 <div class="w-full px-2">
     <!-- 새로고침 섹션 -->
     <div class="flex justify-end mb-2">
@@ -15,19 +16,20 @@
     </div>
 
     {% if request.resolver_match.url_name == 'top_articles' %}
+        <!-- 기존 top_articles 섹션 전체 -->
+
         <div class="w-full">
-            <!-- 상단 2단 그리드 섹션 -->
-            <div class="grid grid-cols-2 gap-8">
-                <!-- 왼쪽: 필터링 결과 섹션 -->
-                <div class="w-full">
-                    <h1 class="text-2xl font-bold mb-4">
-                        주요 기사 필터링
-                        <span class="text-gray-500" id="filteredCount"></span>
-                    </h1>
-                    <div class="bg-white rounded-lg shadow p-4">
-                        <!-- 필터 컨트롤 섹션 -->
-                        <div class="flex gap-4 mb-4">
-                            <!-- 언론사 선택 필터 -->
+            <!-- 필터링 결과 섹션 -->
+            <div class="w-full mb-8">
+                <h1 class="text-2xl font-bold mb-4">
+                    주요 기사 필터링
+                    <span class="text-gray-500" id="filteredCount"></span>
+                </h1>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <!-- 필터 컨트롤 섹션 -->
+                    <div class="flex gap-4 mb-4 items-start">
+                        <!-- 왼쪽: 기존 필터들 -->
+                        <div class="flex gap-4">
                             <div class="relative w-64">
                                 <select id="companyFilter" 
                                         class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
@@ -43,8 +45,8 @@
                                     <!-- 선택된 언론사 태그가 동적으로 추가됨 -->
                                 </div>
                             </div>
+                            <!-- 키워드 필터 및 나머지 버튼들 -->
 
-                            <!-- 키워드 선택 필터 -->
                             <div class="relative w-64">
                                 <select id="keywordFilter" 
                                         class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
@@ -60,61 +62,57 @@
                                     <!-- 선택된 키워드 태그가 동적으로 추가됨 -->
                                 </div>
                             </div>
-
-                            <!-- 필터 초기화 버튼 -->
                             <button id="resetFilters" 
                                     class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 필터 초기화
                             </button>
+                            <button id="analyzeBtn" 
+                                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center gap-2">
+                                <span>분석하기</span>
+                                <div id="analyzeSpinner" class="hidden">
+                                    <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </div>
+                            </button>
                         </div>
-                        <!-- 필터링된 기사들이 표시될 컨테이너 -->
-                        <div id="filteredArticles" class="space-y-2">
-                            <!-- 필터링된 결과가 동적으로 표시됨 -->
+
+                        <!-- 오른쪽: LLM 분석 결과 표시 -->
+
+                        <!-- 오른쪽: LLM 분석 결과 표시 -->
+                        <div id="analysisResults" class="flex-1 bg-gray-50 rounded-lg p-4 min-h-[200px] hidden">
+                            <div class="space-y-4">
+                                <!-- 트렌드 분석 -->
+                                <div class="bg-white rounded p-3 shadow-sm">
+                                    <h3 class="text-sm font-medium text-gray-700 mb-2">트렌드 분석</h3>
+                                    <p id="trendAnalysis" class="text-sm text-gray-600"></p>
+                                </div>
+                                
+                                <!-- 관계 분석 -->
+                                <div class="bg-white rounded p-3 shadow-sm">
+                                    <h3 class="text-sm font-medium text-gray-700 mb-2">관계 분석</h3>
+                                    <p id="relationAnalysis" class="text-sm text-gray-600"></p>
+                                </div>
+                                
+                                <!-- 주요 인사이트 -->
+                                <div class="bg-white rounded p-3 shadow-sm">
+                                    <h3 class="text-sm font-medium text-gray-700 mb-2">주요 인사이트</h3>
+                                    <p id="insightAnalysis" class="text-sm text-gray-600"></p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- AI 분석 결과 섹션 (오른쪽) -->
-                <div class="w-full">
-                    <h1 class="text-2xl font-bold mb-4">AI 트렌드 분석</h1>
-                    <div class="bg-white rounded-lg shadow p-4">
-                        {% if llm_analysis %}
-                            <div class="prose max-w-none space-y-4">
-                                <!-- 주요 트렌드 섹션 -->
-                                <div>
-                                    <h3 class="text-lg font-semibold flex items-center text-blue-600">
-                                        <span class="mr-2">🔍</span>주요 트렌드
-                                    </h3>
-                                    <p class="text-gray-700 ml-6">{{ llm_analysis.trends|default:"분석 준비중..." }}</p>
-                                </div>
-
-                                <!-- 키워드 연관성 섹션 -->
-                                <div>
-                                    <h3 class="text-lg font-semibold flex items-center text-green-600">
-                                        <span class="mr-2">🔗</span>키워드 연관성
-                                    </h3>
-                                    <p class="text-gray-700 ml-6">{{ llm_analysis.relations|default:"분석 준비중..." }}</p>
-                                </div>
-
-                                <!-- 특이사항 섹션 -->
-                                <div>
-                                    <h3 class="text-lg font-semibold flex items-center text-purple-600">
-                                        <span class="mr-2">💡</span>특이사항
-                                    </h3>
-                                    <p class="text-gray-700 ml-6">{{ llm_analysis.insights|default:"분석 준비중..." }}</p>
-                                </div>
-                            </div>
-                        {% else %}
-                            <div class="text-gray-500 text-center py-4">
-                                <p>분석 준비중입니다...</p>
-                            </div>
-                        {% endif %}
+                    <!-- 필터링된 기사 목록 -->
+                    <div id="filteredArticles" class="mt-4">
+                        <!-- 기사 목록 -->
                     </div>
                 </div>
             </div>
 
-            <!-- 하단의 기존 섹션들 -->
-            <div class="grid grid-cols-2 gap-8 mt-8">
+            <!-- 하단 2단 그리드 섹션 -->
+            <div class="grid grid-cols-2 gap-8">
                 <!-- 언론사별 주요 기사 섹션 -->
                 <div class="w-full">
                     <h1 class="text-2xl font-bold mb-4">
@@ -124,16 +122,16 @@
                     
                     {% if news_by_company %}
                         <!-- 언론사별 기사 표시 (간격 축소) -->
-                        <div class="space-y-2">  <!-- space-y-4에서 space-y-2로 변경: 기사 간격 축소 -->
+                        <div class="space-y-2">
                             {% for company, articles in news_by_company.items %}
-                            <div class="bg-white rounded-lg shadow p-2" data-company="{{ company }}">  <!-- data-company: 필터링용 속성 -->
-                                <div class="flex items-center gap-1 mb-2 pb-1 border-b">  <!-- 언론사 헤더 -->
+                            <div class="bg-white rounded-lg shadow p-2" data-company="{{ company }}">
+                                <div class="flex items-center gap-1 mb-2 pb-1 border-b">
                                     <span class="text-lg font-bold text-blue-600">{{ company }}</span>
                                     <span class="text-sm text-gray-500">({{ articles|length }}건)</span>
                                 </div>
-                                <div class="space-y-1.5">  <!-- 기사 목록 컨테이너 -->
+                                <div class="space-y-1.5">
                                     {% for article in articles %}
-                                    <div class="flex gap-1.5 article-item" data-keyword="{{ article.title }}">  <!-- article-item: 필터링용 클래스 -->
+                                    <div class="flex gap-1.5 article-item" data-keyword="{{ article.title }}">
                                         <span class="text-sm font-bold {% if article.rank <= 3 %}text-blue-500{% else %}text-gray-400{% endif %} w-4">
                                             {{ article.rank }}
                                         </span>
@@ -148,7 +146,7 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <!-- 기존 기사 목록 표시 유지 (news_by_company가 없을 때의 대체 표시) -->
+                        <!-- 기존 기사 목록 표시 유지 -->
                         <div class="space-y-4">
                             {% for article in articles %}
                             <div class="bg-white rounded-lg shadow p-4">
@@ -181,6 +179,7 @@
                                 <span class="text-lg font-bold text-blue-600 flex-shrink-0">"{{ keyword }}" 관련</span>
                                 <span class="text-sm text-gray-500">({{ articles|length }}건)</span>
                             </div>
+
                             <div class="space-y-2">
                                 {% for article in articles %}
                                     {% is_duplicate article.title shown_titles as is_shown %}
@@ -211,18 +210,19 @@
             </h1>
             
             {% if news_by_company %}
-                <!-- 언론사별 기사 표시 (간격 축소) -->
-                <div class="space-y-2">  <!-- space-y-4에서 space-y-2로 변경: 기사 간격 축소 -->
+
+                <!-- 언론사별 기사 표시 -->
+                <div class="space-y-2">
                     {% for company, articles in news_by_company.items %}
-                    <div class="bg-white rounded-lg shadow p-2">  <!-- p-3에서 p-2로 변경: 패딩 축소 -->
-                        <div class="flex items-center gap-1 mb-2 pb-1 border-b">  <!-- gap-2→gap-1, pb-2→pb-1: 간격 축소 -->
+                    <div class="bg-white rounded-lg shadow p-2">
+                        <div class="flex items-center gap-1 mb-2 pb-1 border-b">
                             <span class="text-lg font-bold text-blue-600">{{ company }}</span>
                             <span class="text-sm text-gray-500">({{ articles|length }}건)</span>
                         </div>
-                        <div class="space-y-1.5">  <!-- space-y-2에서 space-y-1.5로 변경: 기사 간격 미세 조정 -->
+                        <div class="space-y-1.5">
                             {% for article in articles %}
-                            <div class="flex gap-1.5">  <!-- gap-2에서 gap-1.5로 변경: 요소 간격 미세 조정 -->
-                                <span class="text-sm font-bold {% if article.rank <= 3 %}text-blue-500{% else %}text-gray-400{% endif %} w-4">  <!-- w-5에서 w-4로 변경: 순위 너비 축소 -->
+                            <div class="flex gap-1.5">
+                                <span class="text-sm font-bold {% if article.rank <= 3 %}text-blue-500{% else %}text-gray-400{% endif %} w-4">
                                     {{ article.rank }}
                                 </span>
                                 <a href="{{ article.url }}" target="_blank" 
@@ -254,8 +254,8 @@
                 </div>
             {% endif %}
         </div>
-
     {% else %}
+
         <!-- 실시간 뉴스 랭킹 (메인) -->
         <div class="mb-3">
             <div class="flex justify-between gap-8">
@@ -282,8 +282,9 @@
                 <!-- 주요 키워드 섹션 -->
                 <div class="flex-1">
                     <div class="flex justify-between items-center mb-2">
-                        <h1 class="text-xl font-bold">중요 키워드</h1>
+                        <h1 class="text-xl font-bold">키워드 랭킹</h1>
                     </div>
+
                     <div class="grid gap-1">
                         {% for keyword, count, keyword_group in keyword_rankings %}
                         <div class="bg-white rounded shadow-sm p-2">
@@ -299,7 +300,7 @@
                                         </svg>
                                     </a>
                                 </div>
-                                <!-- 슬라이더 컨테이너 수정: 간격 줄이고 너비 확장 -->
+                                <!-- 슬라이더 컨테이너 -->
                                 <div class="relative w-[36rem] ml-1 overflow-hidden h-6">
                                     <div id="keywordSlider{{ forloop.counter }}" class="flex flex-col transition-all duration-700">
                                         {% with shown_titles="" %}
@@ -327,7 +328,7 @@
                 </div>
             </div>
         </div>
-
+   
         <!-- 실시간 랭킹 섹션 -->
         <div class="mt-8">
             <div class="flex justify-between items-center mb-6">
@@ -367,7 +368,10 @@
         </div>
     {% endif %}
 </div>
+{% endblock content %}
 
+{% block extra_js %}
+<script src="{% static 'js/timer.js' %}"></script>
 <script>
 // 15분 카운트다운 타이머 개선
 function startCountdown() {
@@ -429,61 +433,27 @@ document.addEventListener('visibilitychange', () => {
 });
 </script>
 
-<!-- 필터링 기능 구현 스크립트 -->
+<!-- 필터링 및 분석 기능 구현 스크립트 -->
 <script>
-// 전역 변수 선언 유지
-let selectedCompanyList = new Set();
-let selectedKeywordList = new Set();
-let companyFilter, keywordFilter, selectedCompanies, selectedKeywords;
+// 1. 전역 변수 초기화 - 최상단에 배치
+Object.assign(window, {
+    isAnalyzing: false,
+    selectedCompanyList: window.selectedCompanyList || new Set(),
+    selectedKeywordList: window.selectedKeywordList || new Set(),
+    companyFilter: null,
+    keywordFilter: null,
+    selectedCompanies: null,
+    selectedKeywords: null
+});
 
-// DOM 초기화 및 이벤트 리스너 - window.onload로 변경
-window.onload = function() {
-    // DOM 요소 초기화 시 null 체크
-    companyFilter = document.getElementById('companyFilter');
-    selectedCompanies = document.getElementById('selectedCompanies');
-    const filteredContainer = document.getElementById('filteredArticles');
-    
-    // 필수 요소가 없으면 초기화 중단
-    if (!companyFilter || !selectedCompanies || !filteredContainer) {
-        console.warn('필수 DOM 요소를 찾을 수 없습니다.');
-        return;
-    }
+// 이어서 태그 관련 함수들...
 
-    // 언론사 선택 이벤트 - 기존 코드 유지
-    if (companyFilter) {
-        companyFilter.addEventListener('change', function(e) {
-            const option = e.target.options[e.target.selectedIndex];
-            if (option.value === "") return;
-            
-            // 선택 제한 조건: 최대 3개까지만 선택 가능
-            if (selectedCompanyList.size >= 3 && !selectedCompanyList.has(option.value)) {
-                alert('최대 3개의 언론사만 선택할 수 있습니다.');
-                option.selected = false;  // 선택 취소
-                return;
-            }
-            
-            if (option.selected) {
-                selectedCompanyList.add(option.value);
-            } else {
-                selectedCompanyList.delete(option.value);
-            }
-            
-            updateTags();
-            filterArticles();
-        });
-    }
-
-    // 선택적 DOM 요소 초기화 - 기존 코드 유지
-    keywordFilter = document.getElementById('keywordFilter');
-    selectedKeywords = document.getElementById('selectedKeywords');
-};
-
-// 태그 업데이트 함수 수정
+// 태그 관련 함수들
 function updateTags() {
-    if (!selectedCompanies) return;  // null 체크 추가
+    if (!selectedCompanies) return;
     
     selectedCompanies.innerHTML = '';
-    selectedCompanyList.forEach(company => {
+    window.selectedCompanyList.forEach(company => {
         const tag = document.createElement('div');
         tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm';
         tag.innerHTML = `
@@ -494,17 +464,31 @@ function updateTags() {
     });
 }
 
-// 필터링 메인 함수 - null 체크 추가
+function updateKeywordTags() {
+    if (!selectedKeywords) return;
+    
+    selectedKeywords.innerHTML = '';
+    window.selectedKeywordList.forEach(keyword => {
+        const tag = document.createElement('div');
+        tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm';
+        tag.innerHTML = `
+            ${keyword}
+            <button class="text-green-600 hover:text-green-800" onclick="removeKeyword('${keyword}')">×</button>
+        `;
+        selectedKeywords.appendChild(tag);
+    });
+}
+
+// 필터링 관련 함수들
 window.filterArticles = function() {
-    const selectedCompanies = Array.from(selectedCompanyList);
-    const selectedKeywords = Array.from(selectedKeywordList);
+    const selectedCompanies = Array.from(window.selectedCompanyList);
+    const selectedKeywords = Array.from(window.selectedKeywordList);
     const filteredContainer = document.getElementById('filteredArticles');
     
     if (!filteredContainer) return;
     
     filteredContainer.innerHTML = '';
     
-    // 키워드만 선택된 경우 안내 메시지 표시
     if (selectedKeywords.length > 0 && selectedCompanies.length === 0) {
         filteredContainer.innerHTML = '<p class="text-gray-500 text-center py-4">언론사를 먼저 선택해주세요.</p>';
         const countElement = document.getElementById('filteredCount');
@@ -512,20 +496,19 @@ window.filterArticles = function() {
         return;
     }
     
-    // 아무것도 선택되지 않은 경우
     if (selectedCompanies.length === 0 && selectedKeywords.length === 0) {
         filteredContainer.innerHTML = '<p class="text-gray-500 text-center py-4">언론사와 키워드를 선택해주세요.</p>';
         const countElement = document.getElementById('filteredCount');
         if (countElement) countElement.textContent = '';
         return;
     }
-    
+
     const companyContainers = document.querySelectorAll('div[data-company]');
     let totalArticles = 0;
     
     companyContainers.forEach(container => {
         const company = container.dataset.company;
-        if (selectedCompanies.includes(company)) {  // 'all' 조건 제거
+        if (selectedCompanies.includes(company)) {
             const articles = container.querySelectorAll('.article-item');
             articles.forEach(article => {
                 const articleTitle = article.textContent.toLowerCase();
@@ -553,9 +536,9 @@ window.filterArticles = function() {
     document.getElementById('filteredCount').textContent = `(${totalArticles}건)`;
 };
 
-// 태그 제거 함수
+// 태그 제거 함수들
 window.removeCompany = function(company) {
-    selectedCompanyList.delete(company);
+    window.selectedCompanyList.delete(company);
     Array.from(companyFilter.options).forEach(option => {
         if (option.value === company) option.selected = false;
     });
@@ -563,25 +546,8 @@ window.removeCompany = function(company) {
     window.filterArticles();
 };
 
-// 키워드 태그 업데이트 함수 추가
-function updateKeywordTags() {
-    if (!selectedKeywords) return;
-    
-    selectedKeywords.innerHTML = '';
-    selectedKeywordList.forEach(keyword => {
-        const tag = document.createElement('div');
-        tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm';
-        tag.innerHTML = `
-            ${keyword}
-            <button class="text-green-600 hover:text-green-800" onclick="removeKeyword('${keyword}')">×</button>
-        `;
-        selectedKeywords.appendChild(tag);
-    });
-}
-
-// 키워드 제거 함수 추가
 window.removeKeyword = function(keyword) {
-    selectedKeywordList.delete(keyword);
+    window.selectedKeywordList.delete(keyword);
     Array.from(keywordFilter.options).forEach(option => {
         if (option.value === keyword) option.selected = false;
     });
@@ -589,95 +555,231 @@ window.removeKeyword = function(keyword) {
     filterArticles();
 };
 
-// 키워드 변경 이벤트 핸들러 수정
+// 이벤트 핸들러 함수들
 function handleKeywordChange(e) {
     const option = e.target.options[e.target.selectedIndex];
     if (option.value === "") return;
     
-    // 선택 제한 조건: 최대 5개까지만 선택 가능
-    if (selectedKeywordList.size >= 5 && !selectedKeywordList.has(option.value)) {
+    if (window.selectedKeywordList.size >= 5 && !window.selectedKeywordList.has(option.value)) {
         alert('최대 5개의 키워드만 선택할 수 있습니다.');
         option.selected = false;
         return;
     }
     
     if (option.selected) {
-        selectedKeywordList.add(option.value);
+        window.selectedKeywordList.add(option.value);
     } else {
-        selectedKeywordList.delete(option.value);
+        window.selectedKeywordList.delete(option.value);
     }
     
     updateKeywordTags();
     filterArticles();
 }
-</script>
 
-<script>
-// 모든 초기화 로직을 하나의 DOMContentLoaded 이벤트에서 처리
+// 1. 전역 변수 초기화
+Object.assign(window, {
+    isAnalyzing: false,
+    selectedCompanyList: new Set(),
+    selectedKeywordList: new Set(),
+    companyFilter: null,
+    keywordFilter: null,
+    selectedCompanies: null,
+    selectedKeywords: null
+});
+
+// DOM 초기화 및 이벤트 리스너
 document.addEventListener('DOMContentLoaded', function() {
-    // 모든 필수 DOM 요소 초기화
-    companyFilter = document.getElementById('companyFilter');
-    keywordFilter = document.getElementById('keywordFilter');
-    const resetButton = document.getElementById('resetFilters');  // 변수명 변경
-    const searchBtn = document.getElementById('searchBtn');
-    
-    // 각 요소별 null 체크 후 이벤트 리스너 등록
-    if (keywordFilter) {
-        keywordFilter.addEventListener('change', handleKeywordChange);
+    console.log('DOM loaded');  // DOM 로드 확인
+    console.log('analyzeBtn exists:', !!document.getElementById('analyzeBtn'));
+    // DOM 요소 초기화
+    window.elements = {
+        companyFilter: document.getElementById('companyFilter'),
+        keywordFilter: document.getElementById('keywordFilter'),
+        resetButton: document.getElementById('resetFilters'),
+        analyzeBtn: document.getElementById('analyzeBtn'),
+        analyzeSpinner: document.getElementById('analyzeSpinner'),
+        selectedCompanies: document.getElementById('selectedCompanies'),
+        selectedKeywords: document.getElementById('selectedKeywords')
+    };
+
+    console.log('elements after init:', elements);  // elements 객체 상태 확인
+
+    // 현재 페이지가 top_articles인 경우에만 분석 관련 요소 필요
+    const isTopArticlesPage = window.location.pathname.includes('/news/top/');
+    console.log('isTopArticlesPage:', isTopArticlesPage);  // 페이지 체크 확인
+    // 전역 변수에 필요한 요소 할당 
+    if (elements.companyFilter) {
+        window.companyFilter = elements.companyFilter;
+        window.selectedCompanies = elements.selectedCompanies;
+        
+        // keywordFilter는 별도로 체크
+        if (elements.keywordFilter) {
+            window.keywordFilter = elements.keywordFilter;
+            window.selectedKeywords = elements.selectedKeywords;
+        }
     }
-    
-    if (resetButton) {  // 변수명 변경
-        resetButton.addEventListener('click', function() {  // 익명 함수로 변경
-            // 언론사 필터 초기화
-            selectedCompanyList.clear();
-            Array.from(companyFilter.options).forEach(option => {
+
+    // 필수 요소 체크 
+    if (!elements.companyFilter) {
+        console.warn('필터링에 필요한 DOM 요소를 찾을 수 없습니다.');
+        return;
+    }
+
+    // 언론사 선택 이벤트
+    elements.companyFilter.addEventListener('change', function(e) {
+        const option = e.target.options[e.target.selectedIndex];
+        if (option.value === "") return;
+        
+        if (window.selectedCompanyList.size >= 3 && !window.selectedCompanyList.has(option.value)) {
+            alert('최대 3개의 언론사만 선택할 수 있습니다.');
+            option.selected = false;
+            return;
+        }
+        
+        if (option.selected) {
+            window.selectedCompanyList.add(option.value);
+        } else {
+            window.selectedCompanyList.delete(option.value);
+        }
+        
+        updateTags();
+        filterArticles();
+    });
+
+    // 키워드 필터 이벤트
+    if (elements.keywordFilter) {
+        elements.keywordFilter.addEventListener('change', handleKeywordChange);
+    }
+
+    // 리셋 버튼 이벤트
+    if (elements.resetButton) {
+        elements.resetButton.addEventListener('click', function() {
+            window.selectedCompanyList.clear();
+            window.selectedKeywordList.clear();
+            
+            Array.from(elements.companyFilter.options).forEach(option => {
                 option.selected = false;
             });
             
-            // 키워드 필터 초기화 추가
-            selectedKeywordList.clear();
-            if (keywordFilter) {
-                Array.from(keywordFilter.options).forEach(option => {
+            if (elements.keywordFilter) {
+                Array.from(elements.keywordFilter.options).forEach(option => {
                     option.selected = false;
                 });
             }
             
-            // 태그 업데이트
             updateTags();
-            updateKeywordTags();  // 키워드 태그 업데이트 추가
-            
-            // 필터링 실행
+            updateKeywordTags();
             window.filterArticles();
         });
     }
-    
-    if (searchBtn) {
-        searchBtn.addEventListener('click', handleSearch);
+
+    // 분석 버튼 이벤트
+    if (isTopArticlesPage && elements.analyzeBtn) {
+        console.log('Attempting to add click event');  // 이벤트 추가 시도 확인
+        const analyzeBtn = elements.analyzeBtn;  // 로컬 변수로 저장
+        const analyzeSpinner = elements.analyzeSpinner;  // 로컬 변수로 저장
+        analyzeBtn.addEventListener('click', async function() {
+            console.log('Button clicked');  // 클릭 이벤트 발생 확인
+            if (window.isAnalyzing) return;
+
+            if (window.selectedCompanyList.size === 0 && window.selectedKeywordList.size === 0) {
+                alert('분석할 언론사나 키워드를 선택해주세요.');
+                return;
+            }
+
+            try {
+                window.isAnalyzing = true;
+                analyzeBtn.disabled = true;
+                elements.analyzeSpinner?.classList.remove('hidden');
+
+                // 요청 데이터 로깅
+                const requestData = {
+                    companies: Array.from(window.selectedCompanyList),
+                    keywords: Array.from(window.selectedKeywordList)
+                };
+                console.log('Request data:', requestData);
+
+                const response = await fetch('/news/analyze/trends/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                // 응답 상태 로깅
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`서버 응답 오류: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Response data:', data);  // 응답 데이터 확인
+
+                if (data.success) {
+                    const results = document.getElementById('analysisResults');
+                    console.log('Results element:', results);  // results 요소 확인
+
+                    if (!results) {
+                        throw new Error('분석 결과를 표시할 요소를 찾을 수 없습니다.');
+                    }
+
+                    results.classList.remove('hidden');
+                    
+                    // 각 분석 결과 요소 확인
+                    const elements = {
+                        trend: document.getElementById('trendAnalysis'),
+                        relation: document.getElementById('relationAnalysis'),
+                        insight: document.getElementById('insightAnalysis')
+                    };
+                    
+                    console.log('Analysis elements:', elements);  // 분석 결과 요소들 확인
+                    console.log('Analysis data:', data.analysis);  // �석 데이터 확인
+
+                    // 분석 결과 텍스트 직접 할당
+                    if (elements.trend) {
+                        elements.trend.textContent = data.analysis.trends || '트렌드 분석 결과가 없습니다.';
+                        elements.trend.style.display = 'block';
+                    }
+                    if (elements.relation) {
+                        elements.relation.textContent = data.analysis.relations || '관계 분석 결과가 없습니다.';
+                        elements.relation.style.display = 'block';
+                    }
+                    if (elements.insight) {
+                        elements.insight.textContent = data.analysis.insights  || '주요 인사이트가 없습니다.';
+                        elements.insight.style.display = 'block';
+                    }
+
+                    results.style.display = 'block';  // 결� 컨테이너 보이게 설정
+                    results.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    throw new Error(data.error || '분석 결과를 가져오는데 실패했습니다.');
+                }
+
+            } catch (error) {
+                console.error('분석 중 상세 오류:', error);
+                alert(`분석 중 오류가 발생했습니다: ${error.message}`);
+            } finally {
+                window.isAnalyzing = false;
+                analyzeBtn.disabled = false;
+                elements.analyzeSpinner?.classList.add('hidden');
+            }
+        });
     }
 
     // 초기 필터링 실행
     window.filterArticles();
 
-    // 키워드 슬라이더 초기화 추가
+    // 키워드 슬라이더 초기화
     const keywordRankings = document.querySelectorAll('[id^="keywordSlider"]');
     keywordRankings.forEach((slider, index) => {
         initializeSlider(index + 1);
     });
 });
 
-// 이벤트 핸들러 함수들
-function handleCompanyChange(e) {
-    const option = e.target.options[e.target.selectedIndex];
-    // ... 기존 company change 핸들러 로직 ...
-}
-
-function handleSearch() {
-    const company = companyFilter.value;
-    const keyword = keywordFilter.value;
-    // ... 기존 검색 버튼 로직 ...
-}
-
-// 슬라이더 함수 추가
+// 키워드 슬라이더 함수
 function initializeSlider(index) {
     const slider = document.getElementById(`keywordSlider${index}`);
     if (!slider || slider.children.length <= 1) return;
@@ -689,20 +791,173 @@ function initializeSlider(index) {
         slider.style.transform = `translateY(-${currentPosition * 24}px)`;
     }, 5000);
 }
+
+// 페이지 이탈 시 처리
+window.addEventListener('beforeunload', function() {
+    if (window.isAnalyzing) {
+        window.isAnalyzing = false;
+    }
+});
 </script>
 
-<!-- 키워드 슬라이더 독립 실행 수정 -->
+<script src="{% static 'js/timer.js' %}"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const sliders = {};  // 슬라이더 상태 관리 객체
-    const shownTitles = new Set();  // 이미 표시된 제목 추적
-    let currentSliderIndex = 1;  // 현재 활성화된 슬라이더 인덱스
 
-    // 키워드 순위대로 슬라이더 초기화
-    const initializeSliders = () => {
-        const shownTitles = new Set();  // 상위 랭크에서 표시된 제목 추적
-        
-        // 순위 순서대로 슬라이더 정렬
+// 2. 태그 관련 함수들
+function updateTags() {
+    if (!selectedCompanies) return;
+    
+    selectedCompanies.innerHTML = '';
+    window.selectedCompanyList.forEach(company => {
+        const tag = document.createElement('div');
+        tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm';
+        tag.innerHTML = `
+            ${company}
+            <button class="text-blue-600 hover:text-blue-800" onclick="removeCompany('${company}')">×</button>
+        `;
+        selectedCompanies.appendChild(tag);
+    });
+}
+
+function updateKeywordTags() {
+    if (!selectedKeywords) return;
+    
+    selectedKeywords.innerHTML = '';
+    window.selectedKeywordList.forEach(keyword => {
+        const tag = document.createElement('div');
+        tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm';
+        tag.innerHTML = `
+            ${keyword}
+            <button class="text-green-600 hover:text-green-800" onclick="removeKeyword('${keyword}')">×</button>
+        `;
+        selectedKeywords.appendChild(tag);
+    });
+}
+
+// 3. 태그 제거 함수들
+window.removeCompany = function(company) {
+    window.selectedCompanyList.delete(company);
+    Array.from(companyFilter.options).forEach(option => {
+        if (option.value === company) option.selected = false;
+    });
+    updateTags();
+    window.filterArticles();
+};
+
+window.removeKeyword = function(keyword) {
+    window.selectedKeywordList.delete(keyword);
+    Array.from(keywordFilter.options).forEach(option => {
+        if (option.value === keyword) option.selected = false;
+    });
+    updateKeywordTags();
+    window.filterArticles();
+};
+
+// 4. 필터링 함수
+window.filterArticles = function() {
+    const selectedCompanies = Array.from(window.selectedCompanyList);
+    const selectedKeywords = Array.from(window.selectedKeywordList);
+    const filteredContainer = document.getElementById('filteredArticles');
+    
+    if (!filteredContainer) return;
+    
+    filteredContainer.innerHTML = '';
+    
+    if (selectedKeywords.length > 0 && selectedCompanies.length === 0) {
+        filteredContainer.innerHTML = '<p class="text-gray-500 text-center py-4">언론사를 먼저 선택해주세요.</p>';
+        const countElement = document.getElementById('filteredCount');
+        if (countElement) countElement.textContent = '';
+        return;
+    }
+    
+    if (selectedCompanies.length === 0 && selectedKeywords.length === 0) {
+        filteredContainer.innerHTML = '<p class="text-gray-500 text-center py-4">언론사와 키워드를 선택해주세요.</p>';
+        const countElement = document.getElementById('filteredCount');
+        if (countElement) countElement.textContent = '';
+        return;
+    }
+
+    const companyContainers = document.querySelectorAll('div[data-company]');
+    let totalArticles = 0;
+    
+    companyContainers.forEach(container => {
+        const company = container.dataset.company;
+        if (selectedCompanies.includes(company)) {
+            const articles = container.querySelectorAll('.article-item');
+            articles.forEach(article => {
+                const articleTitle = article.textContent.toLowerCase();
+                const matchesKeywords = selectedKeywords.length === 0 || 
+                    selectedKeywords.some(keyword => articleTitle.includes(keyword.toLowerCase()));
+                
+                if (matchesKeywords) {
+                    const clonedArticle = article.cloneNode(true);
+                    const articleWrapper = document.createElement('div');
+                    articleWrapper.className = 'flex items-center gap-2 mb-2';
+                    
+                    const companyName = document.createElement('span');
+                    companyName.className = 'text-sm font-bold text-blue-600';
+                    companyName.textContent = company;
+                    
+                    articleWrapper.appendChild(companyName);
+                    articleWrapper.appendChild(clonedArticle);
+                    filteredContainer.appendChild(articleWrapper);
+                    totalArticles++;
+                }
+            });
+        }
+    });
+    
+    document.getElementById('filteredCount').textContent = `(${totalArticles}건)`;
+};
+
+// 5. 이벤트 핸들러 함수들
+function handleCompanyChange(e) {
+    const option = e.target.options[e.target.selectedIndex];
+    if (option.value === "") return;
+    
+    if (window.selectedCompanyList.size >= 3 && !window.selectedCompanyList.has(option.value)) {
+        alert('최대 3개의 언론사만 선택할 수 있습니다.');
+        option.selected = false;
+        return;
+    }
+    
+    if (option.selected) {
+        window.selectedCompanyList.add(option.value);
+    } else {
+        window.selectedCompanyList.delete(option.value);
+    }
+    
+    updateTags();
+    window.filterArticles();
+}
+
+function handleKeywordChange(e) {
+    const option = e.target.options[e.target.selectedIndex];
+    if (option.value === "") return;
+    
+    if (window.selectedKeywordList.size >= 5 && !window.selectedKeywordList.has(option.value)) {
+        alert('최대 5개의 키워드만 선택할 수 있습니다.');
+        option.selected = false;
+        return;
+    }
+    
+    if (option.selected) {
+        window.selectedKeywordList.add(option.value);
+    } else {
+        window.selectedKeywordList.delete(option.value);
+    }
+    
+    updateKeywordTags();
+    window.filterArticles();
+}
+
+// 6. 슬라이더 관리자 객체
+const SliderManager = {
+    sliders: {},
+    shownTitles: new Set(),
+    currentSliderIndex: 1,
+
+    initialize() {
         const keywordRankings = Array.from(document.querySelectorAll('[id^="keywordSlider"]'))
             .sort((a, b) => {
                 const rankA = parseInt(a.id.replace('keywordSlider', ''));
@@ -710,75 +965,58 @@ document.addEventListener('DOMContentLoaded', () => {
                 return rankA - rankB;
             });
 
-        // 1위부터 순차적으로 처리
+        this.initializeSliders(keywordRankings);
+        
+        if (Object.keys(this.sliders).length > 0) {
+            setInterval(() => this.rotateSliders(), 5000);
+        }
+    },
+
+    initializeSliders(keywordRankings) {
         keywordRankings.forEach((slider, index) => {
             const rank = index + 1;
             if (!slider || slider.children.length <= 1) return;
 
-            // 현재 키워드의 기사들 중 아직 보여지지 않은 것만 필터링
             const validSlides = Array.from(slider.children).filter(slide => {
                 const title = slide.textContent.trim();
-                if (shownTitles.has(title)) {
-                    return false;  // 상위 랭크에서 이미 표시된 제목은 제외
-                }
-                shownTitles.add(title);  // 새로운 제목 추적에 추가
+                if (this.shownTitles.has(title)) return false;
+                this.shownTitles.add(title);
                 return true;
             });
 
-            // 필터링된 슬라이드가 있는 경우만 저장
             if (validSlides.length > 0) {
-                slider.innerHTML = '';  // 기존 내용 제거
-                validSlides.forEach(slide => slider.appendChild(slide));  // 필터링된 슬라이드만 추가
+                slider.innerHTML = '';
+                validSlides.forEach(slide => slider.appendChild(slide));
                 
-                sliders[rank] = {
+                this.sliders[rank] = {
                     element: slider,
                     currentPosition: 0,
                     maxPosition: validSlides.length - 1
                 };
             }
         });
-    };
+    },
 
-    // 초기화 실행
-    initializeSliders();
-
-    // 순차적으로 슬라이더 실행
-    const rotateSliders = () => {
-        // 이전 슬라이더 리셋
-        if (sliders[currentSliderIndex]) {
-            sliders[currentSliderIndex].element.style.transform = 'translateY(0)';
-            sliders[currentSliderIndex].currentPosition = 0;
+    rotateSliders() {
+        if (this.sliders[this.currentSliderIndex]) {
+            this.sliders[this.currentSliderIndex].element.style.transform = 'translateY(0)';
+            this.sliders[this.currentSliderIndex].currentPosition = 0;
         }
 
-        // 한 사이클이 끝나면 shownTitles 초기화
-        if (currentSliderIndex >= Object.keys(sliders).length) {
-            shownTitles.clear();  // 새로운 사이클 시작
-            currentSliderIndex = 0;  // 인덱스 초기화
+        if (this.currentSliderIndex >= Object.keys(this.sliders).length) {
+            this.shownTitles.clear();
+            this.currentSliderIndex = 0;
         }
 
-        // 다음 슬라이더로 이동
-        currentSliderIndex++;
+        this.currentSliderIndex++;
 
-        // 현재 슬라이더 실행
-        if (sliders[currentSliderIndex] && sliders[currentSliderIndex].maxPosition > 0) {
-            const slider = sliders[currentSliderIndex];
+        if (this.sliders[this.currentSliderIndex] && this.sliders[this.currentSliderIndex].maxPosition > 0) {
+            const slider = this.sliders[this.currentSliderIndex];
             slider.currentPosition = (slider.currentPosition + 1) % (slider.maxPosition + 1);
             slider.element.style.transform = `translateY(-${slider.currentPosition * 24}px)`;
         }
-    };
-
-    // 5초마다 순차적으로 슬라이더 실행
-    if (Object.keys(sliders).length > 0) {
-        setInterval(rotateSliders, 5000);
     }
-});
-</script>
-{% endblock content %}
-
-{% block extra_js %}
-{% load static %}
-<script src="{% static 'js/timer.js' %}"></script>
-<script>
+};
 
 </script>
 {% endblock extra_js %}
