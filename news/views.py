@@ -1,7 +1,7 @@
 from django.core.cache import cache
 from django.shortcuts import render, redirect
 from crawling.naver_news_crawler import NaverNewsCrawler
-from .utils import extract_keywords, analyze_keywords_with_llm
+from .utils import extract_keywords, analyze_keywords_with_llm_sync
 from datetime import datetime
 from django.conf import settings
 from django.views.decorators.cache import cache_page
@@ -12,6 +12,11 @@ from django.db.models import Q
 from .models import Article
 from django.utils import timezone
 import logging
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+import json
+from openai import OpenAI
+from asgiref.sync import sync_to_async
 
 logger = logging.getLogger('news')  # Django 설정의 'news' 로거 사용
 
@@ -76,8 +81,8 @@ def news_list(request):
     # print("Previous keywords:", previous_keywords)
     # print("Current keywords:", keyword_rankings)
     
-    # LLM 분석 추가
-    llm_analysis = analyze_keywords_with_llm(
+    # LLM 분석 (동기 버전 사용)
+    llm_analysis = analyze_keywords_with_llm_sync(
         keywords_with_counts=keyword_rankings,
         titles=all_titles
     )
@@ -131,7 +136,7 @@ def news_list(request):
             titles.extend([article.title for article in articles])
         
         # LLM 분석 추가
-        llm_analysis = analyze_keywords_with_llm(
+        llm_analysis = analyze_keywords_with_llm_sync(
             keywords_with_counts=keyword_rankings,
             titles=titles
         )
@@ -178,7 +183,15 @@ def keyword_articles(request, keyword):
         if keyword in item['title']
     ]
     
-    # keyword_rankings 형식에 맞춰서 데이터 전달
+    # news_by_company 딕셔너리 생성
+    news_by_company = {}
+    for item in filtered_articles:
+        company = item['company_name']
+        if company not in news_by_company:
+            news_by_company[company] = []
+        news_by_company[company].append(item)
+    
+    # keyword_rankings 형식 유지
     keyword_rankings = [(keyword, len(filtered_articles), filtered_articles)]
     
     context = {
@@ -188,10 +201,11 @@ def keyword_articles(request, keyword):
         # news_list.html의 다른 섹션들을 숨기기 위해 빈 리스트 전달
         'news_items': [],
         'daily_rankings': [],
-        'keyword_rankings': []
+        'news_by_company': news_by_company,
+        'keyword_rankings': keyword_rankings
     }
     
-    return render(request, 'news/news_list.html', context) 
+    return render(request, 'news/news_list.html', context)
 
 def top_articles(request):
     cached_data = cache.get('news_data', {})
@@ -266,7 +280,7 @@ def news_summary(request):
     keyword_rankings = extract_keywords(titles, limit=10)
     
     # LLM 분석 추가
-    llm_analysis = analyze_keywords_with_llm(
+    llm_analysis = analyze_keywords_with_llm_sync(
         keywords_with_counts=keyword_rankings,
         titles=titles
     )
@@ -278,3 +292,45 @@ def news_summary(request):
     }
     
     return render(request, 'news/news_summary.html', context) 
+
+@require_http_methods(["POST"])
+def analyze_trends(request):
+    """AI 트렌드 분석 결과를 반환하는 뷰"""
+    try:
+        # POST 데이터 파싱
+        data = json.loads(request.body)
+        selected_companies = data.get('companies', [])
+        selected_keywords = data.get('keywords', [])
+
+        # 캐시된 데이터 가져오기
+        cached_data = cache.get('news_data', {})
+        news_items = cached_data.get('news_items', [])
+        
+        # 선택된 언론사/키워드로 필터링
+        filtered_items = [
+            item for item in news_items
+            if (not selected_companies or item['company_name'] in selected_companies) and
+               (not selected_keywords or any(k in item['title'] for k in selected_keywords))
+        ]
+        
+        # 필터링된 기사의 제목만 추출
+        titles = [item['title'] for item in filtered_items]
+        
+        # 키워드 추출 및 분석
+        keyword_rankings = extract_keywords(titles)
+        llm_analysis = analyze_keywords_with_llm_sync(
+            keywords_with_counts=keyword_rankings,
+            titles=titles
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'analysis': llm_analysis
+        })
+        
+    except Exception as e:
+        logger.error(f"트렌드 분석 중 오류 발생: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': '분석 중 오류가 발생했습니다.'
+        }, status=500) 
