@@ -34,16 +34,17 @@ def atomic_cache(func):
 @atomic_cache
 def news_list(request):
     print("=== 뉴스 목록 조회 시작 ===")  # 일단 print로 확인
+    # 캐시 타임아웃을 settings에서 가져오기
+    CACHE_TIMEOUT = getattr(settings, 'CACHE_TIMEOUT', 900)  # 기본값 15분
+    
+    # 캐시된 데이터 확인 시 타임아웃도 함께 체크
     cached_data = cache.get('news_data')
     last_update = cache.get('last_update')
-    now = datetime.now()
+    now = timezone.now()  # timezone 사용
     
-    # 캐시 타임아웃(15분) 체크
-    if cached_data and last_update and (now - last_update).seconds < 900:
+    # 캐시 타임아웃 체크 (15분)
+    if cached_data and last_update and (now - last_update).seconds < CACHE_TIMEOUT:
         return render(request, 'news/news_list.html', cached_data)
-    
-    # settings에서 캐시 타임아웃 가져오기
-    CACHE_TIMEOUT = 900  # 5분(300)에서 15분(900)으로 수정
     
     news_items = cache.get('news_rankings')
     previous_keywords = cache.get('previous_keywords', [])
@@ -326,7 +327,7 @@ def analyze_trends(request):
         return JsonResponse({
             'success': True,
             'analysis': llm_analysis
-        })
+        }, json_dumps_params={'ensure_ascii': False})  # 한글 인코딩 처리 추가
         
     except Exception as e:
         logger.error(f"트렌드 분석 중 오류 발생: {str(e)}")
