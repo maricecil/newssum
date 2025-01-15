@@ -375,9 +375,18 @@
 <script>
 // 15분 카운트다운 타이머 개선
 function startCountdown() {
-    // 서버의 마지막 업데이트 시간 가져오기
-    const lastUpdate = new Date("{{ last_update|date:'Y-m-d H:i:s' }}");
+    // Django 템플릿 변수를 JavaScript 변수로 먼저 선언
+    const serverLastUpdate = "{{ last_update|date:'Y-m-d H:i:s' }}";
+    console.log('서버 시간:', serverLastUpdate); // 값 확인용
+    
+    const lastUpdate = new Date(serverLastUpdate);
     const now = new Date();
+    
+    // 값 검증
+    if (isNaN(lastUpdate.getTime())) {
+        console.error('잘못된 날짜 형식:', serverLastUpdate);
+        return;
+    }
     
     // 경과 시간 계산 (초 단위)
     const elapsedSeconds = Math.floor((now - lastUpdate) / 1000);
@@ -426,7 +435,7 @@ function startCountdown() {
 document.addEventListener('DOMContentLoaded', startCountdown);
 
 // 페이지가 백그라운드에서 포커스를 받으면 타이머 재동기화
-document.addEventListener('visibilitychange', () => {
+document.addEventListener('visibilitychange', function() {
     if (!document.hidden) {
         startCountdown();
     }
@@ -736,7 +745,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     };
                     
                     console.log('Analysis elements:', elements);  // 분석 결과 요소들 확인
-                    console.log('Analysis data:', data.analysis);  // �석 데이터 확인
+                    console.log('Analysis data:', data.analysis);  // 분석 데이터 확인
 
                     // 분석 결과 텍스트 직접 할당
                     if (elements.trend) {
@@ -752,7 +761,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         elements.insight.style.display = 'block';
                     }
 
-                    results.style.display = 'block';  // 결� 컨테이너 보이게 설정
+                    results.style.display = 'block';  // 결과 컨테이너 보이게 설정
                     results.scrollIntoView({ behavior: 'smooth' });
                 } else {
                     throw new Error(data.error || '분석 결과를 가져오는데 실패했습니다.');
@@ -771,6 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 초기 필터링 실행
     window.filterArticles();
+    
 
     // 키워드 슬라이더 초기화
     const keywordRankings = document.querySelectorAll('[id^="keywordSlider"]');

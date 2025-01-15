@@ -214,13 +214,14 @@ stop_words = {
     '방문', '발송', '교환', '불참', '참석', '초청', '초대', '완성', 
     '경영', '자제', '저격', '구입', '심부름', '제보', '통과', '강화',
     '결제', '유지', '방해', '흡수', '배출', '확산', '임박',
+    '재시', '재시도', '시도', '관측', '예측', '관람', '자진', '독려', '주도',
 
     # 3. 시스템/관리 관련
     '추가', '삭제', '변경', '수정', '제거', '편집', '입력', '출력', 
     '저장', '확장', '축소', '이동', '복사', '시작', '개시', '착수', 
     '출발', '준비', '대기', '종료', '선정', '지정', '선발', '임명',
     '잘못', '성공', '실패', '성과', '실수', '착오', '간부',
-    '마련', '제시', '휴대', '해제', '먹통', '고장', 
+    '마련', '제시', '휴대', '해제', '먹통', '고장', '녹화',
 
     # 4. 상황/설명 관련
     '이유', '원인', '배경', '결과', '목적', '설명', '논리', '방법', '방식', 
@@ -230,6 +231,7 @@ stop_words = {
     '황당', '환심', '사려', '경고', '울분', '오판', '유감', '사과', '용서', 
     '안정', '부당', '이익', '불이익', '요소', '정가', '가격',
     '가능성', '기능성', '진의', '상당', '상대', '여부', '조건', '조건부',
+    '정체', '유력', '표현', '일종', '최소한', '수상한', '극성',
 
     # 5. 감정/심리 표현 추가
     '분노', '후회', '기쁨', '슬픔', '행복', '불안', '두려움',
@@ -241,6 +243,7 @@ stop_words = {
     '초조', '긴장', '불편', '편안', '걱정',
     '선택', '일반', '미래', '수치', '양심', '조바심',
     '얼굴', '심신', '미약', '꿀꺽', '감정', '압도', '싸가지',
+    '도로', '숙소', '공관',
 
     # 6. 시간/수량/통계 관련
     '아침', '저녁', '매일', '매주', '매월', '매년', '밤', '새벽', '점심', 
@@ -250,7 +253,7 @@ stop_words = {
     '이전', '이후', '순서', '순번', '차수', '회차', '단계',
     '기한', '기간', '시간', '시점', '시기',
     '이참', '이때', '이제', '이번', '저번', '요번', '요즘', '그날', '저날',
-    '끝내', '해당', '대박', '고음',
+    '끝내', '해당', '대박', '고음', '오전', '오후',
     '공식', '일부', '관련', '상승', '하락', '증가', '감소', '급등', '급락', 
     '상향', '하향', '상승세', '하락세', '증감', '영하', '이하', '이상', 
     '미만', '초과', '최대', '최소', '최고', '최저', '최강', '최악', '최상', 
@@ -260,14 +263,15 @@ stop_words = {
     '하위', '중하위', '상위', '중상위', '최상위', '최하위',
     '한가지', '두가지', '세가지', '네가지', '하필',
     '급증', '지난해', '분산', '숫자', '확률',
+    
 
     # 7. 법률/수사 관련
     '수사', '조사', '심사', '심의', '점검', '검토', '진술', '증언', '자백', '취조', '심판',
     '심문', '조서', '소환', '체포', '구속', '압수', '수색', '혐의', '증거', '배상', 
-    '소송', '고소', '고발', '기소', '구형', '재판', '판결', 
+    '소송', '고소', '고발', '기소', '구형', '재판', '판결', '출석',
     '흉기', '둔기', '무기', '총', '칼', '망치', '톱', '소총', '화살', '촉', '검열', '나랏돈', '눈먼돈', '거래', '원금', '액수',
     '집행', '대행', '이행', '강제', '명령', '처분', '처벌', '제재', '단속', '규제', '통제',
-    '정족수', '호송', '조력자', '범인', '외압성',
+    '정족수', '호송', '조력자', '범인', '외압성', '본부장', '장관', '차장',
 
     # 8. 의견/태도 관련
     '반대', '찬성', '찬반', '동의', '거부', '반발', '지지', '옹호', '비판', 
@@ -365,11 +369,9 @@ stop_words = {
 
     # 17. 기타 명사
     '생활', '호화', '놀이', '생일', '추억', '명문', '제동', '말꼬리', '꼬리', '안건', '당위', '범위', '오차', '록스', '추방', '사진', '매립', '갑부', 
-    '서면', '마크', '잡지', '팼다', '발목', '기주', '명의', '시대', '비번', '기적', '전기', '전화', '수석', '조수석', '유보', '헬멧', '배낭', '인형', '지호',
-    '외치', '미기', '에르', '도부', '핏대', '임신',  '지층', '내자', '자체', '대신', '우리', '회원', '소문', '발사', '초교', '중교', '고교', '박찬', '차장',
-    '초래', '중재', '정쟁', '주도', '대표', '간식', '친구', '사람', '본부장', '동요', '방청', '장관', '국방', '외면', '독려', '현직', '숙소', '공관', '집합', 
-    '재시', '재시도', '시도', '관측', '예측', '도로', '지지자', '유력', '표현', '일종', '최소한', '수상한', '고백', '비단', '간다', '산책', '자진', '출도', '관람',
-    '극성', '하자마자', '집결', '정체'  
+    '서면', '마크', '잡지', '발목', '기주', '명의', '시대', '비번', '기적', '전기', '전화', '수석', '조수석', '유보', '헬멧', '배낭', '인형',
+    '외치', '미기', '에르', '도부', '핏대', '임신', '지층', '내자', '자체', '대신', '우리', '회원', '소문', '발사', '초교', '중교', '고교',
+    '간식', '친구', '사람', '동요', '방청', '국방', '외면', '집합', '고백', '비단', '산책', '출도', '티타임', '영상'
 }
 
 def extract_keywords(titles, limit=10, keywords_per_title=4):
@@ -651,45 +653,234 @@ process_keywords_async = sync_to_async(process_keywords)
 
 async def analyze_keywords_with_llm(keywords_with_counts, titles, max_tokens=300):
     """
-    키워드와 제목들을 LLM으로 분석 (비동기)
+    여러 기사의 키워드와 제목을 종합 분석하는 함수
+    입력: 키워드 빈도수, 기사 제목 목록
+    출력: 트렌드, 관계, 인사이트 분석
     """
     try:
-        # 데이터 준비 (동기 작업)
+        # 1. 기본 키워드 데이터 준비
+        # - 상위 10개 키워드와 출현 빈도 (예: "윤석열 (15회)")
         keyword_freq = '\n'.join([f"- {k} ({c}회)" for k, c, _ in keywords_with_counts[:10]])
+        
+        # - 상위 5개 키워드와 그들의 연관 키워드 그룹 (예: "윤석열: 대통령, 검찰총장, 정부")
         keyword_groups = '\n'.join([
             f"- {k}: {', '.join(sorted(g))}" 
             for k, _, g in keywords_with_counts[:5]
         ])
+        
+        # - 분석할 주요 뉴스 제목 10개
         formatted_titles = '\n'.join([f"- {t}" for t in titles[:10]])
         
+        # 2. 키워드 관계 분석을 위한 변수 초기화
+        cooccurrence = {}  # 키워드 간 동시 출현 빈도 저장
+        strong_relations = []  # 강한 연관성(80% 이상 동시 출현)을 가진 키워드 쌍 (예: "윤석열-대통령")
+        inclusion_relations = []  # 포함 관계 키워드 쌍 (예: "윤석열 대통령" ⊃ "윤석열")
+        independent_keywords = set()  # 다른 키워드와 포함 관계가 없는 독립 키워드
+        long_keywords = []  # 3음절 이상의 복합 키워드 (주로 중요한 이슈나 사건명)
+        
+        # 3. 각 뉴스 제목별로 키워드 관계 분석
+        for title in titles:
+            title_keywords = set()  # 한 제목에 등장하는 모든 키워드
+            
+            # 3-1. 제목에서 키워드 추출 및 긴 키워드 수집
+            for keyword, _, _ in keywords_with_counts:
+                if keyword in title:
+                    title_keywords.add(keyword)
+                    # 3음절 이상 키워드는 주요 이슈일 가능성이 높음
+                    if len(keyword) >= 3:
+                        long_keywords.append(keyword)
+            
+            # 3-2. 키워드 간 관계 분석
+            for k1 in title_keywords:
+                if k1 not in cooccurrence:
+                    cooccurrence[k1] = {}
+                for k2 in title_keywords:
+                    if k1 != k2:
+                        # 동시 출현 빈도 계산
+                        count = cooccurrence[k1].get(k2, 0) + 1
+                        cooccurrence[k1][k2] = count
+                        
+                        # 강한 연관성 체크 (전체 등장 횟수의 80% 이상이 함께 등장)
+                        # - 이를 통해 실제로 밀접하게 연관된 이슈 파악 가능
+                        if count >= min(
+                            sum(1 for t in titles if k1 in t),
+                            sum(1 for t in titles if k2 in t)
+                        ) * 0.8:
+                            strong_relations.append((k1, k2))
+                        
+                        # 포함 관계 체크 (한 키워드가 다른 키워드의 일부인 경우)
+                        # - 동일 개체의 다양한 표현 방식 파악 가능
+                        if k1 in k2 or k2 in k1:
+                            inclusion_relations.append((k1, k2))
+
+        # 4. 독립 키워드 식별
+        # - 다른 키워드와 포함 관계가 없는 키워드 추출
+        # - 이를 통해 독립적인 주요 이슈 파악 가능
+        all_keywords = [k for k, _, _ in keywords_with_counts]
+        for keyword in all_keywords:
+            if not any(
+                (kw != keyword and (keyword in kw or kw in keyword))
+                for kw in all_keywords
+            ):
+                independent_keywords.add(keyword)
+
+        # 5. 분석 결과 포맷팅
+        # 5-1. 강한 연관성이 있는 키워드 쌍 (상위 5개)
+        strong_relations_fmt = '\n'.join([
+            f"- {k1} ↔ {k2}" for k1, k2 in sorted(set(strong_relations))[:5]
+        ])
+        
+        # 5-2. 포함 관계에 있는 키워드 쌍 (상위 5개)
+        inclusion_relations_fmt = '\n'.join([
+            f"- {max(k1, k2, key=len)} ⊃ {min(k1, k2, key=len)}" 
+            for k1, k2 in sorted(set(inclusion_relations))[:5]
+        ])
+        
+        # 5-3. 독립적인 키워드 목록 (상위 5개)
+        independent_keywords_fmt = '\n'.join([
+            f"- {k}" for k in sorted(independent_keywords)[:5]
+        ])
+        
+        # 5-4. 주요 복합 키워드 목록 (길이순 상위 5개)
+        long_keywords_fmt = '\n'.join([
+            f"- {k}" for k in sorted(set(long_keywords), key=len, reverse=True)[:5]
+        ])
+
+        # 5-5. 동시 출현 빈도 TOP5
+        # - 각 키워드별로 가장 자주 함께 등장한 다른 키워드들을 보여줌
+        # - 전체 동시 출현 빈도가 높은 키워드 순으로 정렬
+        cooccurrence_freq = '\n'.join([
+            f"- {k}: " + ', '.join([
+                f"{related_k}({count}회)" 
+                for related_k, count in sorted(v.items(), key=lambda x: x[1], reverse=True)[:5]
+            ])
+            for k, v in sorted(cooccurrence.items(), 
+                             key=lambda x: sum(x[1].values()), 
+                             reverse=True)[:5]
+        ])
+
+        # 선택된 언론사 목록 (예시)
+        selected_press = [
+            '경향신문', '국민일보', '동아일보', '문화일보', '서울신문',
+            '세계일보', '조선일보', '중앙일보', '한겨레', '한국일보'
+        ]
+        
+        # 언론사별 통계 준비
+        press_stats = {}
+        for title in titles:
+            press_name = title.split('|')[0].strip()  # 언론사 이름 추출
+            # 선택된 언론사만 분석
+            if press_name in selected_press:
+                if press_name not in press_stats:
+                    press_stats[press_name] = {
+                        'count': 0,
+                        'keywords': Counter(),
+                        'titles': []
+                    }
+                press_stats[press_name]['count'] += 1
+                press_stats[press_name]['titles'].append(title)
+                # 해당 제목에 포함된 키워드 카운트
+                for keyword, _, _ in keywords_with_counts:
+                    if keyword in title:
+                        press_stats[press_name]['keywords'][keyword] += 1
+
+        # 언론사별 통계 포맷팅
+        press_stats_fmt = '\n'.join([
+            f"- {press}: 총 {stats['count']}건\n" + 
+            f"  주요키워드: {', '.join(f'{k}({v}건)' for k, v in stats['keywords'].most_common(3))}"
+            for press, stats in sorted(press_stats.items(), key=lambda x: x[1]['count'], reverse=True)
+        ])
+
+        # 전체 키워드 랭킹 포맷팅 추가
+        total_keyword_ranking = '\n'.join([
+            f"- {k}({c}건): {', '.join(sorted(g)[:3])}"  # 연관 키워드는 3개까지만
+            for k, c, g in keywords_with_counts[:10]  # 상위 10개 키워드
+        ])
+
+        # 키워드 연관성 상세 분석
+        keyword_analysis = {}
+        
+        # 상위 5개 키워드에 대한 상세 분석 수행
+        for main_keyword, main_count, main_group in keywords_with_counts[:5]:
+            keyword_analysis[main_keyword] = {
+                'direct_mentions': main_count,  # 직접 언급 횟수
+                'related_keywords': Counter(),  # 함께 등장한 키워드
+                'press_mentions': Counter(),   # 언론사별 언급 횟수
+                'context_titles': []           # 관련 기사 제목
+            }
+            
+            # 연관 키워드 분석
+            for other_keyword, other_count, other_group in keywords_with_counts:
+                if other_keyword != main_keyword and (
+                    other_keyword in cooccurrence.get(main_keyword, {}) or
+                    any(kw in other_group for kw in main_group)
+                ):
+                    keyword_analysis[main_keyword]['related_keywords'][other_keyword] = other_count
+            
+            # 언론사별 분석
+            for title in titles:
+                if main_keyword in title:
+                    press_name = title.split('|')[0].strip()
+                    keyword_analysis[main_keyword]['press_mentions'][press_name] += 1
+                    keyword_analysis[main_keyword]['context_titles'].append(title)
+
+        # 분석 결과 포맷팅
+        keyword_analysis_fmt = []
+        for keyword, stats in keyword_analysis.items():
+            analysis = f'''
+            [{keyword} 관련 분석]
+            1. 직접 언급: {stats['direct_mentions']}회
+            2. 주요 연관 키워드 (상위 5개):
+            {chr(10).join(f"- {k}({v}회)" for k, v in stats['related_keywords'].most_common(5))}
+            3. 언론사별 보도 현황:
+            {chr(10).join(f"- {press}({count}건)" for press, count in stats['press_mentions'].most_common())}
+            4. 주요 관련 기사:
+            {chr(10).join(f"- {title}" for title in stats['context_titles'][:3])}
+            '''
+            keyword_analysis_fmt.append(analysis)
+
         analysis_prompt = f'''
-        다음 뉴스 데이터를 분석해주세요. 각 항목을 반드시 모두 작성해주세요:
+        다음 뉴스 데이터를 분석해주세요:
 
         ===== 분석할 데이터 =====
-        [키워드 빈도]
-        {keyword_freq}
+        [전체 현황]
+        - 분석 대상: {len(selected_press)}개 언론사
+        - 전체 기사: {sum(stats['count'] for stats in press_stats.values())}건
 
-        [연관 키워드 그룹]
-        {keyword_groups}
+        [언론사별 통계]
+        {press_stats_fmt}
 
-        [주요 제목]
+        [전체 키워드 순위]
+        {total_keyword_ranking}
+
+        [키워드 간 연관성]
+        강한 연관: {strong_relations_fmt}
+        포함 관계: {inclusion_relations_fmt}
+        독립 키워드: {independent_keywords_fmt}
+
+        [주요 기사 제목]
         {formatted_titles}
 
         ===== 분석 요청 =====
-        아래 세 가지 항목을 반드시 순서대로 모두 완성해주세요.
-    각 항목은 100자 이내로 간단명료하게 작성해주세요.
+        위 데이터를 바탕으로 다음 세 가지를 분석해주세요:
 
-        1. 핵심 트렌드:
-        (뉴스의 주요 흐름을 설명해주세요)
+        1. 트렌드:
+        - 언론사별 보도량과 주요 키워드 분포
+        - 가장 많이 다룬 이슈와 맥락(예: 대통령(19건), 윤석열(13건), 계엄(8건))
 
-        2. 주요 키워드 간 연관성:
-        (키워드들이 어떻게 연결되어 있는지 설명해주세요)
+        2. 관계:
+        - 키워드 간 강한 연관성이 있는 조합
+        - 언론사별 키워드 조합 패턴
+        - 언론사 간 관점 차이
 
-        3. 주요 인사이트:
-        (이 뉴스들이 시사하는 바를 설명해주세요)
+        3. 인사이트:
+        - 전체 언론사의 주요 보도 경향
+        - 언론사별 관점 차이와 특징
+        - 데이터가 시사하는 핵심 의미
 
-        모든 항목을 빠짐없이 작성해주시기 바랍니다.
-'''
+        ※ 반드시 구체적인 수치와 예시를 포함해 주세요.
+        ※ 각 섹션은 200자 이내로 작성해 주세요.
+        '''
 
         # GPT 응답을 비동기로 처리
         response = await _get_gpt_response(
@@ -738,17 +929,30 @@ async def _get_gpt_response(prompt, temperature=0.7, max_tokens=300, split_secti
         response = await client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "당신은 뉴스 분석 전문가입니다. 주어진 뉴스들을 객관적이고 간단명료하게 분석해주세요."},
+                {"role": "system", "content": """
+                당신은 뉴스 분석 전문가입니다. 다음 규칙을 따라 분석해주세요:
+                1. 언론사별 보도 경향과 차이점에 집중
+                2. 구체적인 수치와 예시 인용
+                3. 객관적이고 중립적인 톤 유지
+                4. 각 섹션별 명확한 구분
+                """},
                 {"role": "user", "content": prompt}
             ],
             temperature=temperature,
-            max_tokens=max_tokens,
-            # 추가할 파라미터들
-            presence_penalty=0.0,    # 반복을 피하기 위한 페널티
-            frequency_penalty=0.0,   # 같은 단어 반복을 피하기 위한 페널티
-            stop=None,              # 강제로 멈추지 않도록 설정
-            top_p=1.0               # 다양한 응답을 위한 설정
+            max_tokens=1000,  # 토큰 제한 증가
+            presence_penalty=0.0,
+            frequency_penalty=0.0,
+            stop=None,
+            top_p=1.0
         )
+        
+        # finish_reason 체크 및 재시도
+        finish_reason = response.choices[0].finish_reason
+        if finish_reason == "length":
+            # 토큰 제한에 걸린 경우 더 짧은 프롬프트로 재시도
+            shortened_prompt = prompt[:len(prompt)//2]  # 프롬프트 길이 절반으로 줄임
+            return await _get_gpt_response(shortened_prompt, temperature, max_tokens, split_sections)
+            
         content = response.choices[0].message.content
         
         # finish_reason 체크 추가
@@ -831,7 +1035,6 @@ async def _get_gpt_response(prompt, temperature=0.7, max_tokens=300, split_secti
                 }
             }
         else:
-            # 여기가 누락되어 있었음! 응답이 반환되지 않았을 것
             return {
                 'success': True,
                 'analysis': content.strip()
@@ -851,7 +1054,9 @@ async def _get_gpt_response(prompt, temperature=0.7, max_tokens=300, split_secti
 
 async def analyze_news_with_gpt(article_text, max_tokens=150):
     """
-    뉴스 기사 내용을 GPT로 분석하는 함수
+    개별 뉴스 기사를 분석하는 함수
+    입력: 기사 전문
+    출력: 요약, 키워드, 관점 분석
     """
     try:
         analysis_prompt = f"""
@@ -881,7 +1086,10 @@ async def analyze_news_with_gpt(article_text, max_tokens=150):
         }
 
 def analyze_keywords_with_llm_sync(keywords_with_counts, titles, max_tokens=150):
-    """동기 버전의 키워드 분석 함수"""
+    """
+    비동기 분석 함수를 동기 환경에서 호출하기 위한 래퍼
+    Django view 등에서 사용
+    """
     return asyncio.run(analyze_keywords_with_llm(
         keywords_with_counts=keywords_with_counts,
         titles=titles,

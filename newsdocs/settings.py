@@ -115,10 +115,19 @@ LOGGING = {
 if not os.path.exists(os.path.join(BASE_DIR, 'logs')):
     os.makedirs(os.path.join(BASE_DIR, 'logs'))
 
+# API 타임아웃 설정
+API_TIMEOUT = 30  # API 호출 타임아웃 (초)
+CACHE_TIMEOUT = 900  # 캐시 타임아웃 (15분)
+
+# 캐시 설정 수정
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'unique-snowflake',
-        'TIMEOUT': 900,  # 5분(300)에서 15분(900)으로 수정
+        'TIMEOUT': CACHE_TIMEOUT,
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,  # 최대 캐시 항목 수
+            'CULL_FREQUENCY': 3,  # 정리 빈도
+        }
     }
 }
