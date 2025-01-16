@@ -85,7 +85,7 @@ def news_list(request):
     # LLM 분석 (동기 버전 사용)
     llm_analysis = analyze_keywords_with_llm_sync(
         keywords_with_counts=keyword_rankings,
-        titles=all_titles
+        titles=news_items  # 전체 기사 데이터 전달
     )
     
     # news_by_company 딕셔너리 생성 추가
@@ -139,7 +139,7 @@ def news_list(request):
         # LLM 분석 추가
         llm_analysis = analyze_keywords_with_llm_sync(
             keywords_with_counts=keyword_rankings,
-            titles=titles
+            titles=news_items
         )
         
         context.update({
@@ -228,6 +228,7 @@ def top_articles(request):
     # 디버깅을 위한 출력 추가
     print("filtered articles count:", len(top_articles))
     
+    
     # 언론사별로 기사 그룹화
     news_by_company = {}
     for item in top_articles:
@@ -269,27 +270,31 @@ def top_articles(request):
     return render(request, 'news/news_list.html', context) 
 
 def news_summary(request):
-    # 기존 코드...
     articles = Article.objects.filter(
         created_at__gte=timezone.now() - timezone.timedelta(hours=24)
     ).order_by('-created_at')
     
-    # 제목 리스트 추출
-    titles = [article.title for article in articles]
+    # Article 모델의 데이터를 딕셔너리로 변환
+    articles_data = [{
+        'title': article.title,
+        'company_name': article.press_name,  # DB의 press_name 필드 사용
+        'rank': article.rank
+    } for article in articles]
     
-    # 키워드 추출
+    # 키워드 추출 (titles 리스트 사용)
+    titles = [article.title for article in articles]
     keyword_rankings = extract_keywords(titles, limit=10)
     
-    # LLM 분석 추가
+    # LLM 분석 시 전체 기사 데이터 전달
     llm_analysis = analyze_keywords_with_llm_sync(
         keywords_with_counts=keyword_rankings,
-        titles=titles
+        titles=articles_data  # 딕셔너리 형태의 데이터 전달
     )
     
     context = {
         'articles': articles,
         'keyword_rankings': keyword_rankings,
-        'llm_analysis': llm_analysis,  # LLM 분석 결과 추가
+        'llm_analysis': llm_analysis,
     }
     
     return render(request, 'news/news_summary.html', context) 
@@ -313,21 +318,35 @@ def analyze_trends(request):
             if (not selected_companies or item['company_name'] in selected_companies) and
                (not selected_keywords or any(k in item['title'] for k in selected_keywords))
         ]
-        
+
+        # 언론사별 분포 분석 추가
+        press_distribution = {}
+        for item in filtered_items:
+            company = item['company_name']
+            press_distribution[company] = press_distribution.get(company, 0) + 1
+
         # 필터링된 기사의 제목만 추출
         titles = [item['title'] for item in filtered_items]
         
         # 키워드 추출 및 분석
-        keyword_rankings = extract_keywords(titles)
+        keyword_rankings = [
+            {'keyword': k, 'count': c, 'articles': list(a)}  # set을 list로 변환
+            for k, c, a in extract_keywords(titles)
+        ]
         llm_analysis = analyze_keywords_with_llm_sync(
             keywords_with_counts=keyword_rankings,
-            titles=titles
+            titles=filtered_items
         )
         
         return JsonResponse({
             'success': True,
-            'analysis': llm_analysis
-        }, json_dumps_params={'ensure_ascii': False})  # 한글 인코딩 처리 추가
+            'analysis': {
+                'llm_analysis': llm_analysis,
+                'press_distribution': press_distribution,  
+                'filtered_count': len(filtered_items),     
+                'keyword_rankings': keyword_rankings       
+            }
+        }, json_dumps_params={'ensure_ascii': False})
         
     except Exception as e:
         logger.error(f"트렌드 분석 중 오류 발생: {str(e)}")
