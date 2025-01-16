@@ -197,11 +197,11 @@ stop_words = {
     '가짜', '사실', '허위', '진실', '실제', '메시지', '공문', '이름', '명칭',
     '측', '씨', '분들', '여러분', '맹공', '맞불', '설전', '폭로', '특종',
     '삶', '여정', '자결', '자살', '죽음', '왜곡', '들통', '치명', '줄줄이',
-    '정계', '천상계', 
+    '정계', '천상계', '잡지', '영상', '동영상', '발의', '제보', '서면', '마크',
 
     # 2. 행위/절차/업무 관련
     '발표', '발언', '주장', '지적', '발견', '등장', '제기', '자리', '위험',
-    '파견', '훈육', '일임',  '임시',
+    '파견', '훈육', '일임',  '임시', '추방', '매립',
     '모의', '압박', '해결', '폐기', '통제', '투입', '진화', '설득', '차단',
     '기대', '희망', '우려', '걱정', '예상', '전망', '완료', '예정', '진행',
     '분석', '판단', '만남', '생각', '추천', '권고', '지목', '신뢰', '혼란',
@@ -215,6 +215,8 @@ stop_words = {
     '경영', '자제', '저격', '구입', '심부름', '제보', '통과', '강화',
     '결제', '유지', '방해', '흡수', '배출', '확산', '임박',
     '재시', '재시도', '시도', '관측', '예측', '관람', '자진', '독려', '주도',
+    '허가', '불허', '가불', '청구', '발사', '외면', '집합', '고백', '산책',
+    '외치', '방청', '국방', '해석', '둔화', '동결',
 
     # 3. 시스템/관리 관련
     '추가', '삭제', '변경', '수정', '제거', '편집', '입력', '출력', 
@@ -222,6 +224,7 @@ stop_words = {
     '출발', '준비', '대기', '종료', '선정', '지정', '선발', '임명',
     '잘못', '성공', '실패', '성과', '실수', '착오', '간부',
     '마련', '제시', '휴대', '해제', '먹통', '고장', '녹화',
+    '제동', '주소', '비번', '명의',
 
     # 4. 상황/설명 관련
     '이유', '원인', '배경', '결과', '목적', '설명', '논리', '방법', '방식', 
@@ -232,6 +235,8 @@ stop_words = {
     '안정', '부당', '이익', '불이익', '요소', '정가', '가격',
     '가능성', '기능성', '진의', '상당', '상대', '여부', '조건', '조건부',
     '정체', '유력', '표현', '일종', '최소한', '수상한', '극성',
+    '범위', '오차', '상태', '처지', '자체', '과대', '당위', '안건',
+    '그대로', '부담', '호칭',
 
     # 5. 감정/심리 표현 추가
     '분노', '후회', '기쁨', '슬픔', '행복', '불안', '두려움',
@@ -243,7 +248,7 @@ stop_words = {
     '초조', '긴장', '불편', '편안', '걱정',
     '선택', '일반', '미래', '수치', '양심', '조바심',
     '얼굴', '심신', '미약', '꿀꺽', '감정', '압도', '싸가지',
-    '도로', '숙소', '공관',
+    '도로', '숙소', '공관', '대성통곡', '눈물', '부심', '연기',
 
     # 6. 시간/수량/통계 관련
     '아침', '저녁', '매일', '매주', '매월', '매년', '밤', '새벽', '점심', 
@@ -251,7 +256,7 @@ stop_words = {
     '마지막', '최종', '최후', '말기', '종반', '막바지', '종말', 
     '처음', '초기', '시초', '발단', '중간', '도중', '중반', '중순',
     '이전', '이후', '순서', '순번', '차수', '회차', '단계',
-    '기한', '기간', '시간', '시점', '시기',
+    '기한', '기간', '시간', '시점', '첫날', '개월', '평생',
     '이참', '이때', '이제', '이번', '저번', '요번', '요즘', '그날', '저날',
     '끝내', '해당', '대박', '고음', '오전', '오후',
     '공식', '일부', '관련', '상승', '하락', '증가', '감소', '급등', '급락', 
@@ -272,6 +277,8 @@ stop_words = {
     '흉기', '둔기', '무기', '총', '칼', '망치', '톱', '소총', '화살', '촉', '검열', '나랏돈', '눈먼돈', '거래', '원금', '액수',
     '집행', '대행', '이행', '강제', '명령', '처분', '처벌', '제재', '단속', '규제', '통제',
     '정족수', '호송', '조력자', '범인', '외압성', '본부장', '장관', '차장',
+    '의원', '사장', '판사', '죄인', '회원', '친구', '우리', '갑부',
+    '일류', '이류', '삼류', '초교', '중교', '고교', '인연', '악연',
 
     # 8. 의견/태도 관련
     '반대', '찬성', '찬반', '동의', '거부', '반발', '지지', '옹호', '비판', 
@@ -281,11 +288,12 @@ stop_words = {
     '응답', '회신', '토론', '토의', '대화', '담화', '연설', '강연', '상담', '퍼주면',
     '최선', '지원', '제의', '공개', '지시', '방침', '어른', '어르신', '소년', '소녀',
     '더더', '판하', '독촉', '인정', '멍청이', '반격', '무산', '결집', '방어',
+    '부근', '조수석', '전기', '전화',
 
     # 9. 행정/지역 관련
     '시', '특별시', '광역시', '특별자치시', '특별자치도', '남도', '북도', '제주도', '도청', '시청', '군청', '구청',
     '쪽', '방향', '방면', '좌측', '우측', '양측', '왼쪽', '오른쪽', '윗쪽', '아랫쪽', '양쪽', '앞', '뒤', '위', '아래', '북', '남', '동', '서',
-    '지자체', '교민', '정치', '번지',
+    '지자체', '교민', '정치', '번지', '생활', '호화', '놀이', '생일', '간식', '티타임', '헬멧', '배낭', '인형', '사진',
 
     # 10. 인물/주민 관련
     '인', '국인', '본인', '아인',
@@ -304,7 +312,7 @@ stop_words = {
     '직원', '사원', '근로자', '노동자', '종업원', '근무자', '담당자',
     '실무자', '관리자', '주임', '임원', '비정규직', '정규직',
     '창시자', '부부', '남성', '여성', '상사', '남편', '아내', '운전자',
-    '출신', '새내기주',
+    '출신', '새내기주', '명문', '기적', '초유', '연하', '완행',
 
     # 11. 수량/단위/화폐
     '번', '차례', '회', '차', '개', '명', '건', '달', '해', '년', '월', '일', '시', '분', '초', '무더기',
@@ -320,7 +328,7 @@ stop_words = {
     '자기', '얘기', '고시', '비교', '면전', '홀로', '멀쩡', '동안', '다시', '혼자',
     '당장', '즉시', '곧바로', '바로', '지금', '현재',
     '방금', '금방', '이내', '순간', '잠시', '잠깐',
-    '이따가', '나중', '이전', '이후',
+    '이따가', '나중', '이전', '이후', '시대',
     '오늘', '내일', '모레', '어제', '그제', '그저께',
     '그때', '번째', '첫번째', '두번째', '세번째', '네번째', '다섯번째', '여섯번째', '일곱번째', '여덟번째', '아홉번째', '열번째',
     '하나', '다섯', '여섯', '일곱', '여덟', '아홉',
@@ -344,11 +352,8 @@ stop_words = {
 
     # 14. 지시/대명사/부사
     '이런', '저런', '그런', '어떤', '무슨', '웬', '이러한', '저러한', '그러한',
-    '이런저런', '어떠한', '이와같은', '그와같은',
-    '이것', '저것', '그것', '무엇', '어디', '언제', '어떻게',
-    '이곳', '저곳', '그곳', '어느곳',
-    '이이', '저이', '그이', '누구',
-    '스스로', '모두', '그냥', '결국',
+    '이런저런', '어떠한', '이와같은', '그와같은', '이것', '저것', '그것', '무엇', '어디', '언제', '어떻게',
+    '이곳', '저곳', '그곳', '어느곳', '이이', '저이', '그이', '누구', '스스로', '모두', '그냥', '결국',
 
     # 15. 동사/형용사 활용
     '하다', '하라', '하라고', '했다', '한다', '할', '하고', '해서', '하며', '하면', '하니', '하게', '하여', '했고', '했지만', '했는데', '하는', '하게', '하지', 
@@ -362,16 +367,13 @@ stop_words = {
     # 16. 종결어미
     '아요', '어요', '여요', '예요', '에요', '해요', '했어요', '하세요', '됐어요', '되요', '주세요', '세요',
     '차려요', '보세요', '드세요', '가요', '와요', '나요', '말아요', '봐요', '써요', '놓아요', '두어요',
-    '습니다', '습니까', '합니다', '합니까',
-    '네요', '군요', '는군요', '는데요', '더군요',
+    '습니다', '습니까', '합니다', '합니까', '네요', '군요', '는군요', '는데요', '더군요',
     # 형태소 분석 오류 방지용 음절
     '렌스', '스키', '프스', '브스', '드스', 
 
     # 17. 기타 명사
-    '생활', '호화', '놀이', '생일', '추억', '명문', '제동', '말꼬리', '꼬리', '안건', '당위', '범위', '오차', '록스', '추방', '사진', '매립', '갑부', 
-    '서면', '마크', '잡지', '발목', '기주', '명의', '시대', '비번', '기적', '전기', '전화', '수석', '조수석', '유보', '헬멧', '배낭', '인형',
-    '외치', '미기', '에르', '도부', '핏대', '임신', '지층', '내자', '자체', '대신', '우리', '회원', '소문', '발사', '초교', '중교', '고교',
-    '간식', '친구', '사람', '동요', '방청', '국방', '외면', '집합', '고백', '비단', '산책', '출도', '티타임', '영상'
+    '말꼬리', '꼬리', '록스', '발목', '기주', '미기', '에르', '도부', '핏대', '임신', '지층', '내자', '소문', '동요', '비단', '출도',
+    '이역만리', '만리', '이역', '단역', '일역', '물어', '이제야', '주의'
 }
 
 def extract_keywords(titles, limit=10, keywords_per_title=4):
@@ -647,15 +649,77 @@ def process_keywords(keywords_list):
     
     return processed_keywords
 
+def extract_press_name(title, company_code=None):
+    """
+    기사 제목과 회사 코드에서 언론사 이름을 추출하고 정규화
+    """
+    # 디버깅 로그 추가
+    logger.info(f"Extracting press name from: {title}")
+    
+    # 네이버 뉴스 언론사 코드-이름 매핑
+    news_companies = {
+        '032': '경향신문',  # 경향
+        '005': '국민일보',  # 국민
+        '020': '동아일보',  # 동아
+        '021': '문화일보',  # 문화
+        '081': '서울신문',  # 서울
+        '022': '세계일보',  # 세계
+        '023': '조선일보',  # 조선
+        '025': '중앙일보',  # 중앙
+        '028': '한겨레',    # 한겨레
+        '469': '한국일보'   # 한국
+    }
+    
+    try:
+        # 1. company_code가 있는 경우 (크롤링 시점)
+        if company_code and company_code in news_companies:
+            return news_companies[company_code]
+        
+        # 2. [언론사] 형식 체크
+        match = re.search(r'\[(.*?)\]', title)
+        if match:
+            press_name = match.group(1).strip()
+            # 정규화된 이름으로 매칭
+            for company_name in news_companies.values():
+                if press_name in company_name or company_name in press_name:
+                    return company_name
+        
+        # 3. 제목에서 언론사 직접 검색
+        for press_name in news_companies.values():
+            if press_name in title:
+                return press_name
+            
+            # 3-1. 축약형 처리 (예: "경향신문" -> "경향")
+            short_name = press_name.replace('신문', '').replace('일보', '')
+            if short_name and short_name in title:
+                return press_name
+        
+        # 4. 실패 시 로깅
+        logger.debug(f"언론사 매칭 실패: {title}")
+        return None
+            
+    except Exception as e:
+        logger.warning(f"언론사 이름 추출 실패: {title} - {str(e)}")
+        return None
+
+def format_news_item(rank, title, press_name):
+    """
+    뉴스 아이템을 포맷팅하는 함수
+    """
+    return f"[{rank}위] {press_name} - {title}"
+
 # 동기 함수들을 비동기로 변환
 extract_keywords_async = sync_to_async(extract_keywords)
 process_keywords_async = sync_to_async(process_keywords)
 
 async def analyze_keywords_with_llm(keywords_with_counts, titles, max_tokens=300):
     """
-    여러 기사의 키워드와 제목을 종합 분석하는 함수
-    입력: 키워드 빈도수, 기사 제목 목록
-    출력: 트렌드, 관계, 인사이트 분석
+    articles_data: {
+        'title': str,          # 기사 제목
+        'press_name': str,     # 언론사 이름
+        'rank': int,           # 랭킹
+        'url': str             # URL (옵션)
+    }의 리스트
     """
     try:
         # 1. 기본 키워드 데이터 준비
@@ -758,19 +822,19 @@ async def analyze_keywords_with_llm(keywords_with_counts, titles, max_tokens=300
                              key=lambda x: sum(x[1].values()), 
                              reverse=True)[:5]
         ])
-
-        # 선택된 언론사 목록 (예시)
-        selected_press = [
-            '경향신문', '국민일보', '동아일보', '문화일보', '서울신문',
-            '세계일보', '조선일보', '중앙일보', '한겨레', '한국일보'
-        ]
-        
-        # 언론사별 통계 준비
+        # 언론사별 통계 준비 
         press_stats = {}
-        for title in titles:
-            press_name = title.split('|')[0].strip()  # 언론사 이름 추출
-            # 선택된 언론사만 분석
-            if press_name in selected_press:
+        for title_data in titles:
+            if isinstance(title_data, dict):
+                # 딕셔너리인 경우 (크롤링된 데이터)
+                press_name = title_data.get('company_name')
+                title_text = title_data.get('title')
+            else:
+                # 문자열인 경우 (DB에서 가져온 데이터)
+                press_name = extract_press_name(title_data)
+                title_text = title_data
+                
+            if press_name:  # 언론사 이름이 있는 경우만 처리
                 if press_name not in press_stats:
                     press_stats[press_name] = {
                         'count': 0,
@@ -778,11 +842,21 @@ async def analyze_keywords_with_llm(keywords_with_counts, titles, max_tokens=300
                         'titles': []
                     }
                 press_stats[press_name]['count'] += 1
-                press_stats[press_name]['titles'].append(title)
+                press_stats[press_name]['titles'].append(title_text)
+                
                 # 해당 제목에 포함된 키워드 카운트
                 for keyword, _, _ in keywords_with_counts:
-                    if keyword in title:
+                    if keyword in title_text:
                         press_stats[press_name]['keywords'][keyword] += 1
+
+        # GPT 프롬프트에 언론사별 통계 추가
+        press_analysis = '\n'.join([
+            f"- {press}: {stats['count']}건, 주요키워드: " + 
+            ', '.join(f"{k}({v}회)" for k, v in stats['keywords'].most_common(3))
+            for press, stats in sorted(press_stats.items(), 
+                                    key=lambda x: x[1]['count'], 
+                                    reverse=True)
+        ])
 
         # 언론사별 통계 포맷팅
         press_stats_fmt = '\n'.join([
@@ -820,7 +894,7 @@ async def analyze_keywords_with_llm(keywords_with_counts, titles, max_tokens=300
             # 언론사별 분석
             for title in titles:
                 if main_keyword in title:
-                    press_name = title.split('|')[0].strip()
+                    press_name = extract_press_name(title)
                     keyword_analysis[main_keyword]['press_mentions'][press_name] += 1
                     keyword_analysis[main_keyword]['context_titles'].append(title)
 
@@ -840,23 +914,21 @@ async def analyze_keywords_with_llm(keywords_with_counts, titles, max_tokens=300
             keyword_analysis_fmt.append(analysis)
 
         analysis_prompt = f'''
-        다음 뉴스 데이터를 분석해주세요:
+        다음 필터링된 뉴스 데이터를 분석해주세요:
 
         ===== 분석할 데이터 =====
         [전체 현황]
-        - 분석 대상: {len(selected_press)}개 언론사
-        - 전체 기사: {sum(stats['count'] for stats in press_stats.values())}건
+        - 분석 대상: {len(press_stats)}개 언론사의 {len(titles)}건 기사
+        - 주요 키워드: {len(keywords_with_counts)}개
 
         [언론사별 통계]
         {press_stats_fmt}
 
-        [전체 키워드 순위]
-        {total_keyword_ranking}
-
-        [키워드 간 연관성]
-        강한 연관: {strong_relations_fmt}
-        포함 관계: {inclusion_relations_fmt}
-        독립 키워드: {independent_keywords_fmt}
+        [키워드 분석]
+        - 전체 키워드: {total_keyword_ranking}
+        - 강한 연관: {strong_relations_fmt}
+        - 포함 관계: {inclusion_relations_fmt}
+        - 독립 키워드: {independent_keywords_fmt}
 
         [주요 기사 제목]
         {formatted_titles}
@@ -865,23 +937,26 @@ async def analyze_keywords_with_llm(keywords_with_counts, titles, max_tokens=300
         위 데이터를 바탕으로 다음 세 가지를 분석해주세요:
 
         1. 트렌드:
-        - 언론사별 보도량과 주요 키워드 분포
-        - 가장 많이 다룬 이슈와 맥락(예: 대통령(19건), 윤석열(13건), 계엄(8건))
+        - 현재 필터링된 {len(press_stats)}개 언론사({", ".join(press_stats.keys())})의 보도 경향
+        - 가장 많이 다룬 이슈와 맥락
 
         2. 관계:
         - 키워드 간 강한 연관성이 있는 조합
         - 언론사별 키워드 조합 패턴
-        - 언론사 간 관점 차이
 
         3. 인사이트:
         - 전체 언론사의 주요 보도 경향
-        - 언론사별 관점 차이와 특징
         - 데이터가 시사하는 핵심 의미
 
         ※ 반드시 구체적인 수치와 예시를 포함해 주세요.
         ※ 각 섹션은 200자 이내로 작성해 주세요.
         '''
 
+        # 3. 디버깅 로그 추가
+        logger.info(f"Analysis prompt prepared with:")
+        logger.info(f"- Press count: {len(press_stats)}")
+        logger.info(f"- Article count: {len(titles)}")
+        logger.info(f"- Keyword count: {len(keywords_with_counts)}")
         # GPT 응답을 비동기로 처리
         response = await _get_gpt_response(
             analysis_prompt, 
@@ -977,24 +1052,19 @@ async def _get_gpt_response(prompt, temperature=0.7, max_tokens=300, split_secti
                 
                 lower_line = line.lower()
                 
-                # 1. 직접적인 섹션 매칭
-                if '1.' in line or '핵심 트렌드:' in line:
-                    if current_section and current_text:
-                        sections[current_section] = ' '.join(current_text)
+                # 섹션 매칭 조건 확장
+                if any(marker in lower_line for marker in 
+                    ['**1.', '**트렌드:', '1.트렌드', '1. 트렌드']):
                     current_section = 'trends'
-                    current_text = [line.split(':', 1)[-1].strip() if ':' in line else line]
-                
-                elif '2.' in line or '주요 키워드 간 연관성:' in line:
-                    if current_section and current_text:
-                        sections[current_section] = ' '.join(current_text)
+                    current_text = []  # 새 섹션 시작시 텍스트 초기화
+                elif any(marker in lower_line for marker in 
+                    ['**2.', '**관계:', '2.관계', '2. 관계']):
                     current_section = 'relations'
-                    current_text = [line.split(':', 1)[-1].strip() if ':' in line else line]
-                
-                elif '3.' in line or '주요 인사이트:' in line:
-                    if current_section and current_text:
-                        sections[current_section] = ' '.join(current_text)
+                    current_text = []  # 새 섹션 시작시 텍스트 초기화
+                elif any(marker in lower_line for marker in 
+                    ['**3.', '**인사이트:', '3.인사이트', '3. 인사이트']):
                     current_section = 'insights'
-                    current_text = [line.split(':', 1)[-1].strip() if ':' in line else line]
+                    current_text = []  # 새 섹션 시작시 텍스트 초기화
                 
                 # 2. 일반 텍스트 라인 처리
                 elif current_section:
@@ -1003,6 +1073,7 @@ async def _get_gpt_response(prompt, temperature=0.7, max_tokens=300, split_secti
                     if cleaned_line.startswith(('1.', '2.', '3.')):
                         cleaned_line = cleaned_line.split('.', 1)[-1].strip()
                     current_text.append(cleaned_line)
+                    sections[current_section] = ' '.join(current_text)  # 실시간으로 업데이트
 
             # 마지막 섹션 처리
             if current_section and current_text:
