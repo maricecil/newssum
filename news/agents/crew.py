@@ -39,14 +39,14 @@ class NewsAnalysisCrew:
         ])
         return f"주요 키워드 (Top {len(top_keywords)}):\n{keywords_str}"
 
-    def create_agents(self):
-        # 1. 데이터 수집가 에이전트 (기존 데이터 정리)
+    def create_agents(self, press_stats=None):
+        # 1. 데이터 수집가 에이전트
         collector = Agent(
             role='데이터 수집가',
-            goal='언론사별 기사 데이터 분류 및 핵심 정보 추출',
-            backstory="""
+            goal=f'현재 필터링된 {len(press_stats) if press_stats else "전체"} 언론사의 기사 데이터 분류 및 핵심 정보 추출',
+            backstory=f"""
             당신은 뉴스 데이터를 분석하는 전문가입니다.
-            주어진 기사들을 언론사별로 분류하고, 각 기사의 핵심 키워드를 추출하여
+            현재 {", ".join(press_stats.keys()) if press_stats else "모든"} 언론사의 기사들을 분석하여
             전체적인 보도 동향을 파악합니다.
             반드시 한국어로 응답해야 합니다.
             """,
@@ -55,12 +55,15 @@ class NewsAnalysisCrew:
             language="Korean"
         )
         
-        # 2. 언론사 분석가 에이전트 (관점과 경향성 분석)
+        # 2. 언론사 분석가 에이전트
         analyst = Agent(
             role='언론사 분석가',
             goal='언론사별 보도 경향과 관점 차이 분석',
-            backstory="""언론사의 보도 성향과 관점 차이를 분석하는 전문가.
-                     같은 사안에 대한 다른 시각과 표현 방식을 비교 분석합니다.""",
+            backstory=f"""
+            언론사의 보도 성향과 관점 차이를 분석하는 전문가입니다.
+            현재 분석 대상: {", ".join(press_stats.keys()) if press_stats else "전체 언론사"}
+            각 언론사의 보도 건수와 주요 키워드를 기반으로 차이점을 분석합니다.
+            """,
             llm=self.llm,
             verbose=True,
             language="Korean"
@@ -150,13 +153,11 @@ class NewsAnalysisCrew:
         
         return [collection_task, analysis_task, report_task]
     
-    def run_analysis(self, news_data: List[Dict]) -> Dict:
+    async def run_analysis(self, news_data: List[Dict], press_stats: Dict = None) -> Dict:
         try:
-            # ranked_keywords 추출 (news_data에서 이미 랭킹된 키워드 가져오기)
-            ranked_keywords = [item['keyword'] for item in news_data[0].get('ranked_keywords', [])]
-            
-            agents = self.create_agents()
-            tasks = self.create_tasks(agents, news_data, ranked_keywords)  # ranked_keywords 전달
+            # press_stats 정보를 agents에 전달
+            agents = self.create_agents(press_stats)
+            tasks = self.create_tasks(agents, news_data, press_stats)
             
             crew = Crew(
                 agents=agents,

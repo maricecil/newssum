@@ -117,37 +117,6 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- CrewAI 분석 결과 섹션 -->
-                <div class="w-1/2 mb-8">
-                    <h1 class="text-2xl font-bold mb-4">
-                        주요 키워드 심층 분석
-                        <span class="text-gray-500">(상위 10개)</span>
-                    </h1>
-                    <div class="bg-white rounded-lg shadow p-4">
-                        {% if crew_analysis.error %}
-                            <p class="text-red-500">{{ crew_analysis.error }}</p>
-                        {% else %}
-                            <!-- 분석 결과 표시 -->
-                            <div class="space-y-4">
-                                <div class="text-sm text-gray-600">
-                                    <span class="font-medium">분석 대상:</span> {{ crew_analysis.analyzed_articles }}건의 주요 기사
-                                </div>
-                                
-                                <!-- 분석 내용 -->
-                                <div class="prose prose-sm max-w-none">
-                                    {{ crew_analysis.summary|linebreaks }}
-                                </div>
-                                
-                                <!-- 분석 시각 -->
-                                <div class="text-xs text-gray-400 mt-2">
-                                    분석 시각: {{ crew_analysis.timestamp|date:"Y-m-d H:i" }}
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
 
             <!-- 하단 2단 그리드 섹션 -->
             <div class="grid grid-cols-2 gap-8">
@@ -453,60 +422,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             analyzeSpinner: document.getElementById('analyzeSpinner'),
             selectedCompanies: document.getElementById('selectedCompanies'),
             selectedKeywords: document.getElementById('selectedKeywords'),
-            crewAnalysisContent: document.getElementById('crewAnalysisContent'),
-            crewAnalysisSpinner: document.getElementById('crewAnalysisSpinner')
         };
 
         console.log('elements after init:', elements);
-
-        // 자동 CrewAI 분석 실행
-        try {
-            if (elements.crewAnalysisSpinner) {
-                elements.crewAnalysisSpinner.classList.remove('hidden');
-            }
-
-            const response = await fetch('/news/analyze/trends/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: JSON.stringify({
-                    companies: [],      // 빈 배열로 전체 언론사 분석
-                    keywords: [],       // 빈 배열로 전체 키워드 분석
-                    analysis_type: 'detailed'  // 상세 분석 요청
-                })
-            });
-            
-            if (!response.ok) {
-                throw new Error(`서버 응답 오류: ${response.status}`);
-            }
-
-            const data = await response.json();
-            
-            if (data.success && elements.crewAnalysisContent) {
-                elements.crewAnalysisContent.classList.remove('hidden');
-                elements.crewAnalysisContent.innerHTML = `
-                    <div class="space-y-4">
-                        <div class="prose prose-sm max-w-none">
-                            ${data.summary.replace(/\n/g, '<br>')}
-                        </div>
-                    </div>
-                `;
-            }
-
-        } catch (error) {
-            console.error('CrewAI 자동 분석 중 오류:', error);
-            if (elements.crewAnalysisContent) {
-                elements.crewAnalysisContent.innerHTML = `
-                    <p class="text-red-500">분석 중 오류가 발생했습니다: ${error.message}</p>
-                `;
-            }
-        } finally {
-            if (elements.crewAnalysisSpinner) {
-                elements.crewAnalysisSpinner.classList.add('hidden');
-            }
-        }
 
         // 필터링 관련 코드
         if (!elements.companyFilter) {
