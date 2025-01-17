@@ -17,6 +17,8 @@ from django.views.decorators.http import require_http_methods
 import json
 from openai import OpenAI
 from asgiref.sync import sync_to_async
+from .agents.crew import NewsAnalysisCrew
+from langchain_community.llms import OpenAI
 
 logger = logging.getLogger('news')  # Django 설정의 'news' 로거 사용
 
@@ -228,7 +230,6 @@ def top_articles(request):
     # 디버깅을 위한 출력 추가
     print("filtered articles count:", len(top_articles))
     
-    
     # 언론사별로 기사 그룹화
     news_by_company = {}
     for item in top_articles:
@@ -243,13 +244,22 @@ def top_articles(request):
     
     # 키워드별로 기사 그룹화할 때도 전체 키워드 사용
     keyword_articles = {}
-    for keyword, count, _ in keyword_rankings:  # count 정보도 함께 사용
+    for keyword, count, _ in keyword_rankings[:10]:  # 상위 10개 키워드만
         related_articles = [
             item for item in top_articles
             if keyword in item['title']
         ]
         if related_articles:
             keyword_articles[keyword] = related_articles
+    
+    # CrewAI 분석 실행
+    top_ranked_articles = []
+    for articles in keyword_articles.values():
+        if articles:  # 각 키워드당 첫 번째 기사만 선택
+            top_ranked_articles.append(articles[0])
+    
+    crew = NewsAnalysisCrew()
+    crew_analysis = crew.run_analysis(top_ranked_articles)
     
     # 전체 기사 수 계산
     total_articles = sum(len(articles) for articles in keyword_articles.values())
@@ -264,10 +274,11 @@ def top_articles(request):
         'keyword_rankings': keyword_rankings,
         'keyword_articles': keyword_articles,
         'total_keyword_articles': total_articles,
-        'last_update': cached_data.get('last_update')
+        'last_update': cached_data.get('last_update'),
+        'crew_analysis': crew_analysis  # CrewAI 분석 결과 추가
     }
     
-    return render(request, 'news/news_list.html', context) 
+    return render(request, 'news/news_list.html', context)
 
 def news_summary(request):
     articles = Article.objects.filter(
@@ -307,6 +318,7 @@ def analyze_trends(request):
         data = json.loads(request.body)
         selected_companies = data.get('companies', [])
         selected_keywords = data.get('keywords', [])
+        analysis_type = data.get('analysis_type', 'basic')  # 기본값은 'basic'
 
         # 캐시된 데이터 가져오기
         cached_data = cache.get('news_data', {})
@@ -319,7 +331,7 @@ def analyze_trends(request):
                (not selected_keywords or any(k in item['title'] for k in selected_keywords))
         ]
 
-        # 언론사별 분포 분석 추가
+        # 언론사별 분포 분석
         press_distribution = {}
         for item in filtered_items:
             company = item['company_name']
@@ -333,19 +345,45 @@ def analyze_trends(request):
             {'keyword': k, 'count': c, 'articles': list(a)}  # set을 list로 변환
             for k, c, a in extract_keywords(titles)
         ]
+        
+        # 기본 LLM 분석
         llm_analysis = analyze_keywords_with_llm_sync(
             keywords_with_counts=keyword_rankings,
             titles=filtered_items
         )
         
+        # 기본 분석 결과 구성
+        basic_analysis = {
+            'llm_analysis': llm_analysis,
+            'press_distribution': press_distribution,
+            'filtered_count': len(filtered_items),
+            'keyword_rankings': keyword_rankings
+        }
+        
+        # 상세 분석 요청시 CrewAI 분석 추가
+        if analysis_type == 'detailed':
+            try:
+                crew = NewsAnalysisCrew()
+                crew_analysis = crew.run_analysis(filtered_items)
+                # CrewOutput을 dictionary로 변환
+                basic_analysis['crew_analysis'] = {
+                    'summary': str(crew_analysis.summary),  # 문자열로 변환
+                    'analyzed_articles': crew_analysis.analyzed_articles,
+                    'timestamp': crew_analysis.timestamp.isoformat()  # ISO 형식 문자열로 변환
+                }
+                logger.info("CrewAI 분석 완료")
+            except Exception as crew_error:
+                logger.error(f"CrewAI 분석 중 오류 발생: {str(crew_error)}")
+                basic_analysis['crew_analysis_error'] = "상세 분석 중 오류가 발생했습니다."
+        
+        # 분석 결과 캐싱 (30분)
+        cache_key = f"analysis_{analysis_type}_{'-'.join(selected_companies)}_{'-'.join(selected_keywords)}"
+        cache.set(cache_key, basic_analysis, timeout=1800)
+        
         return JsonResponse({
             'success': True,
-            'analysis': {
-                'llm_analysis': llm_analysis,
-                'press_distribution': press_distribution,  
-                'filtered_count': len(filtered_items),     
-                'keyword_rankings': keyword_rankings       
-            }
+            'analysis': basic_analysis,
+            'cache_key': cache_key
         }, json_dumps_params={'ensure_ascii': False})
         
     except Exception as e:
@@ -353,4 +391,4 @@ def analyze_trends(request):
         return JsonResponse({
             'success': False,
             'error': '분석 중 오류가 발생했습니다.'
-        }, status=500) 
+        }, status=500)
