@@ -1,5 +1,7 @@
 from django import template
 import re
+import json
+from django.core.serializers.json import DjangoJSONEncoder
 
 register = template.Library()
 
@@ -14,3 +16,11 @@ def is_duplicate(title, shown_titles):
     
     # 완전 일치만 검사
     return title in titles_list 
+
+@register.filter
+def json_encode(value):
+    """Django 모델 객체를 JSON으로 직렬화"""
+    return json.dumps(
+        [{'title': a.title, 'content': a.content, 'press': a.press} for a in value],
+        cls=DjangoJSONEncoder
+    ) 

@@ -276,7 +276,7 @@ stop_words = {
     # 7. 법률/수사 관련
     '수사', '조사', '심사', '심의', '점검', '검토', '진술', '증언', '자백', '취조', '심판',
     '심문', '조서', '소환', '체포', '구속', '압수', '수색', '혐의', '증거', '배상', 
-    '소송', '고소', '고발', '기소', '구형', '재판', '판결', '출석', '협박',
+    '소송', '고소', '고발', '기소', '구형', '재판', '판결', '출석', '협박', '현직',
     '흉기', '둔기', '무기', '총', '칼', '망치', '톱', '소총', '화살', '촉', '검열', '나랏돈', '눈먼돈', '거래', '원금', '액수',
     '집행', '대행', '이행', '강제', '명령', '처분', '처벌', '제재', '단속', '규제', '통제',
     '정족수', '호송', '조력자', '범인', '외압성', '본부장', '장관', '차장',
@@ -297,7 +297,7 @@ stop_words = {
     '시', '특별시', '광역시', '특별자치시', '특별자치도', '남도', '북도', '제주도', '도청', '시청', '군청', '구청',
     '쪽', '방향', '방면', '좌측', '우측', '양측', '왼쪽', '오른쪽', '윗쪽', '아랫쪽', '양쪽', '앞', '뒤', '위', '아래', '북', '남', '동', '서',
     '지자체', '교민', '정치', '번지', '생활', '호화', '놀이', '생일', '간식', '티타임', '헬멧', '배낭', '인형', '사진',
-    '인근', '이역만리', '만리', '이역', '단역', '일역', '교육', '세계',
+    '인근', '이역만리', '만리', '이역', '단역', '일역', '교육', '세계', '서부', '동부', '남부', '북부',
 
     # 10. 인물/주민 관련
     '시민', '도민', '군민', '구민', '주민', '국민', '민간인', '민족', '유가족', '유족', 
@@ -436,27 +436,13 @@ def extract_keywords(titles, limit=10, keywords_per_title=4):
         phrases = okt.phrases(working_title)
         logger.info(f"구문 추출: {phrases}")
 
-        # 5. 필터링 및 중복 포함 관계 처리
+        # 5. 5글자 이하이면서 띄어쓰기가 없는 키워드 필터링
         temp_nouns = []
-        sorted_phrases = sorted(phrases, key=len)  # 짧은 구문부터 처리
-        
-        for phrase in sorted_phrases:
-            # 현재 구문이 다른 구문에 포함되는 경우만 추가
-            # 예: "윤석열"이 "윤석열 대통령"에 포함되면 "윤석열"만 추가
-            should_add = True
-            
-            for other in sorted_phrases:
-                if phrase != other:
-                    if phrase in other:  # 현재 구문이 다른 구문에 포함되면
-                        should_add = True
-                        break
-                    elif other in phrase:  # 다른 구문이 현재 구문에 포함되면
-                        should_add = False
-                        break
-            
-            if should_add and phrase not in temp_nouns:
+        for phrase in phrases:
+            if len(phrase) <= 5 and ' ' not in phrase and phrase not in temp_nouns:
                 temp_nouns.append(phrase)
-        logger.info(f"중복 포함 관계 처리 후: {temp_nouns}")
+                
+        logger.info(f"5글자 이하 단일 키워드 필터링 후: {temp_nouns}")
 
         # 6. stop_words 필터링 (첫 번째 필터링 - 유지)
         temp_nouns = [phrases for phrases in temp_nouns if len(phrases) >= 2 and phrases not in stop_words]
@@ -1015,7 +1001,7 @@ async def _get_gpt_response(prompt, temperature=0.7, max_tokens=300, split_secti
     try:
         client = AsyncOpenAI()
         response = await client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": """
                 당신은 뉴스 분석 전문가입니다. 다음 규칙을 따라 분석해주세요:

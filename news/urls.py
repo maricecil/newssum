@@ -14,4 +14,5 @@ urlpatterns = [
     path('analyze/trends/', views.analyze_trends, name='analyze_trends'),
     # path('analyze-crew/', views.analyze_crew, name='analyze_crew'),
     # path('api/analyze-filtered/', views.analyze_filtered_news, name='analyze_filtered_news'),
+    path('summary/keyword/', views.article_summary, name='article_summary'),  # 키워드별 뉴스 요약
 ] 

@@ -9,7 +9,8 @@ from functools import wraps
 import threading
 import re
 from django.db.models import Q
-from .models import Article
+from .models import Article, Keyword
+from django.db.models import Count
 from django.utils import timezone
 import logging
 from django.http import JsonResponse
@@ -17,7 +18,7 @@ from django.views.decorators.http import require_http_methods
 import json
 from openai import OpenAI
 from asgiref.sync import sync_to_async
-from .agents.crew import NewsAnalysisCrew
+from .agents.crew import NewsAnalysisCrew, summarize_article
 from langchain_community.llms import OpenAI
 
 logger = logging.getLogger('news')  # Django 설정의 'news' 로거 사용
@@ -392,3 +393,105 @@ def analyze_trends(request):
             'success': False,
             'error': '분석 중 오류가 발생했습니다.'
         }, status=500)
+
+def article_summary(request):
+    print("\n=== article_summary 디버깅 ===")
+    
+    # 1. 캐시 데이터 확인
+    news_items = cache.get('news_rankings', [])
+    print(f"1. 캐시된 뉴스 개수: {len(news_items)}")
+    
+    if not news_items:
+        print("캐시된 뉴스가 없습니다!")
+        return redirect('news:news_list')
+    
+    # 2. 키워드 추출 확인
+    all_titles = [item['title'] for item in news_items]
+    keyword_rankings = extract_keywords(all_titles)
+    print(f"2. 추출된 키워드 수: {len(keyword_rankings)}")
+    print(f"상위 5개 키워드: {keyword_rankings[:5]}")
+    
+    # 3. 기사 그룹화 및 요약
+    keyword_articles = {}
+    for keyword, count, _ in keyword_rankings[:5]:
+        related_articles = []
+        for item in news_items:
+            if keyword in item['title']:
+                # 캐시에서 요약 확인
+                cache_key = f"summary_{item['url']}"
+                summary = cache.get(cache_key)
+                
+                if not summary:
+                    try:
+                        # 요약이 없으면 새로 생성
+                        summary = summarize_article(item['url'])
+                        # 요약 결과 캐시에 저장 (1시간)
+                        cache.set(cache_key, summary, 3600)
+                    except Exception as e:
+                        print(f"요약 생성 실패: {str(e)}")
+                        summary = "요약을 생성할 수 없습니다."
+                
+                article_data = {
+                    'title': item['title'],
+                    'source': item['company_name'],
+                    'url': item['url'],
+                    'published_at': datetime.now(),
+                    'summary': summary
+                }
+                related_articles.append(article_data)
+                
+        if related_articles:
+            keyword_articles[keyword] = related_articles
+            print(f"3. 키워드 '{keyword}'에 대한 기사 수: {len(related_articles)}")
+    
+    # 4. 컨텍스트 데이터 확인
+    context = {
+        'keyword_articles': keyword_articles,
+        'total_count': sum(len(articles) for articles in keyword_articles.values())
+    }
+    print(f"4. 총 기사 수: {context['total_count']}")
+    
+    return render(request, 'news/news_summary.html', context)
+
+def get_top_keyword_articles():
+    print("\n=== get_top_keyword_articles 함수 시작 ===")
+    
+    # news_rankings에서 직접 뉴스 아이템 가져오기
+    news_items = cache.get('news_rankings', [])
+    print(f"뉴스 아이템 수: {len(news_items)}")
+    
+    # 전체 기사에서 키워드 랭킹 추출
+    all_titles = [item['title'] for item in news_items]
+    keyword_rankings = extract_keywords(all_titles)
+    print(f"키워드 랭킹 수: {len(keyword_rankings)}")
+    
+    # 키워드 랭킹이 없으면 빈 딕셔너리 반환
+    if not keyword_rankings:
+        print("키워드 랭킹이 없습니다.")
+        return {'keyword': '', 'articles': [], 'total_count': 0}
+    
+    # 1위 키워드 가져오기
+    top_keyword = keyword_rankings[0][0]
+    print(f"1위 키워드: {top_keyword}")
+    
+    # 1위 키워드가 포함된 기사 필터링
+    top_articles = [
+        {
+            'title': item['title'],
+            'url': item['url'],
+            'company_name': item['company_name'],
+            'rank': item.get('rank', 0)
+        }
+        for item in news_items 
+        if top_keyword in item['title']
+    ]
+    print(f"필터링된 기사 수: {len(top_articles)}")
+    
+    # 랭킹순으로 정렬
+    top_articles.sort(key=lambda x: x['rank'])
+    
+    return {
+        'keyword': top_keyword,
+        'articles': top_articles,
+        'total_count': len(top_articles)
+    }

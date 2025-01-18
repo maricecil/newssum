@@ -4,8 +4,56 @@ import logging
 from datetime import datetime
 from langchain_openai import OpenAI
 from collections import Counter
+from langchain.schema import HumanMessage, SystemMessage
+import requests
+from bs4 import BeautifulSoup
+import os
+from langchain_community.chat_models import ChatOpenAI
 
 logger = logging.getLogger(__name__)
+
+def summarize_article(url):
+    """
+    뉴스 기사 URL을 받아서 내용을 요약하는 함수
+    """
+    try:
+        # 1. URL에서 기사 내용 가져오기
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # 네이버 뉴스 기사 본문 찾기
+        article_body = soup.select_one('#dic_area')
+        if not article_body:
+            return "기사 내용을 찾을 수 없습니다."
+        
+        content = article_body.get_text().strip()
+        
+        # 2. GPT를 사용하여 요약
+        llm = ChatOpenAI(
+            model_name="gpt-3.5-turbo",
+            temperature=0.5,
+            max_tokens=300
+        )
+        
+        system_message = """
+        당신은 뉴스 기사를 간단명료하게 요약하는 전문가입니다.
+        주어진 뉴스 기사를 3줄로 요약해주세요.
+        핵심 내용만 추출하여 객관적으로 작성해주세요.
+        """
+        
+        messages = [
+            SystemMessage(content=system_message),
+            HumanMessage(content=f"다음 뉴스 기사를 요약해주세요:\n\n{content[:2000]}")  # 첫 2000자만 사용
+        ]
+        
+        response = llm.invoke(messages)
+        summary = response.content
+        
+        return summary
+        
+    except Exception as e:
+        print(f"요약 중 오류 발생: {str(e)}")
+        return "기사 요약 중 오류가 발생했습니다."
 
 class NewsAnalysisCrew:
     def __init__(self):
@@ -40,14 +88,16 @@ class NewsAnalysisCrew:
         return f"주요 키워드 (Top {len(top_keywords)}):\n{keywords_str}"
 
     def create_agents(self, press_stats=None):
-        # 1. 데이터 수집가 에이전트
-        collector = Agent(
-            role='데이터 수집가',
-            goal=f'현재 필터링된 {len(press_stats) if press_stats else "전체"} 언론사의 기사 데이터 분류 및 핵심 정보 추출',
+        # 1. 뉴스 분류 에이전트
+        classifier = Agent(
+            role='뉴스 분류 전문가',
+            goal='유사한 관점과 내용의 뉴스를 그룹화하고 분류',
             backstory=f"""
-            당신은 뉴스 데이터를 분석하는 전문가입니다.
-            현재 {", ".join(press_stats.keys()) if press_stats else "모든"} 언론사의 기사들을 분석하여
-            전체적인 보도 동향을 파악합니다.
+            당신은 뉴스 기사들의 관점과 내용을 분석하여 그룹화하는 전문가입니다.
+            1. 유사한 관점을 가진 기사들을 그룹화
+            2. 각 그룹의 대표적 특징 파악
+            3. 시간순으로 사건 흐름 정리
+            4. 중복된 내용 필터링
             반드시 한국어로 응답해야 합니다.
             """,
             llm=self.llm,
@@ -55,32 +105,41 @@ class NewsAnalysisCrew:
             language="Korean"
         )
         
-        # 2. 언론사 분석가 에이전트
-        analyst = Agent(
-            role='언론사 분석가',
-            goal='언론사별 보도 경향과 관점 차이 분석',
+        # 2. 관점 비교 분석가
+        comparator = Agent(
+            role='관점 비교 분석가',
+            goal='각 언론사의 보도 관점 차이와 특징 분석',
             backstory=f"""
-            언론사의 보도 성향과 관점 차이를 분석하는 전문가입니다.
+            서로 다른 관점을 가진 보도들을 비교 분석하는 전문가입니다.
+            1. 같은 사건에 대한 다른 시각 비교
+            2. 각 언론사의 강조점 파악
+            3. 보도 논조의 차이점 분석
+            4. 객관적 사실과 주관적 해석 구분
             현재 분석 대상: {", ".join(press_stats.keys()) if press_stats else "전체 언론사"}
-            각 언론사의 보도 건수와 주요 키워드를 기반으로 차이점을 분석합니다.
             """,
             llm=self.llm,
             verbose=True,
             language="Korean"
         )
         
-        # 3. 종합 보고서 작성 에이전트 (객관적 정리)
-        reporter = Agent(
-            role='보고서 작성자',
-            goal='분석 결과를 객관적으로 정리하여 종합 보고서 작성',
-            backstory="""복잡한 분석 결과를 명확하고 이해하기 쉽게 정리하는 전문가.
-                     편향 없이 객관적인 관점에서 종합적인 인사이트를 도출합니다.""",
+        # 3. 통합 요약 작성자
+        summarizer = Agent(
+            role='통합 요약 전문가',
+            goal='다양한 관점을 통합하여 균형잡힌 요약 작성',
+            backstory="""
+            여러 관점의 뉴스를 통합하여 균형잡힌 요약을 만드는 전문가입니다.
+            1. 핵심 사실 중심의 요약
+            2. 상반된 관점들의 균형있는 통합
+            3. 시간순 사건 전개 정리
+            4. 중복 내용 제거 및 간결한 정리
+            편향되지 않은 객관적인 시각을 유지합니다.
+            """,
             llm=self.llm,
             verbose=True,
             language="Korean"
         )
         
-        return [collector, analyst, reporter]
+        return [classifier, comparator, summarizer]
     
     def create_tasks(self, agents: List[Agent], news_data: List[Dict], ranked_keywords: List[str]) -> List[Task]:
         """

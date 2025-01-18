@@ -8,6 +8,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    {% csrf_token %}
 </head>
 <body class="bg-gray-100">
     <nav class="bg-white shadow-lg">
@@ -21,6 +22,10 @@
                         <div class="h-6 w-px bg-gray-300 my-auto"></div>
                         <a href="{% url 'news:top_articles' %}" class="flex items-center py-4">
                             <span class="font-semibold text-gray-500 text-lg">주요 기사 모아보기</span>
+                        </a>
+                        <div class="h-6 w-px bg-gray-300 my-auto"></div>
+                        <a href="{% url 'news:article_summary' %}" class="flex items-center py-4">
+                            <span class="font-semibold text-gray-500 text-lg">주요 기사 요약</span>
                         </a>
                     </div>
                 </div>

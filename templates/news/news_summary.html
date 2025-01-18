@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    {% if not keyword_articles %}
+    <div class="text-center py-12">
+        <p class="text-gray-500">현재 표시할 뉴스가 없습니다.</p>
+    </div>
+    {% endif %}
+    {% for keyword, articles in keyword_articles.items %}
+    <article class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <!-- 제목과 날짜 -->
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ keyword }} 관련 주요 뉴스</h2>
+            <time class="text-sm text-gray-500">{{ articles.0.published_at|date:"Y-m-d" }}</time>
+        </div>
+
+        <!-- 핵심 내용 불릿 포인트 -->
+        <ul class="space-y-3 mb-6">
+            {% for article in articles %}
+            <li class="flex flex-col gap-2">
+                <div class="flex items-start gap-2">
+                    <span class="text-gray-400 mt-1">•</span>
+                    <div>
+                        <span class="text-gray-900">{{ article.title }}</span>
+                        <span class="text-sm text-gray-600 ml-2">{{ article.source }}</span>
+                    </div>
+                </div>
+                {% if article.summary != "요약 없음" %}
+                <div class="ml-6 text-sm text-gray-600">
+                    {{ article.summary }}
+                </div>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+
+        <!-- 하단 액션 버튼 -->
+        <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+            <div class="flex items-center space-x-4">
+                <a href="{{ article.url }}" target="_blank" class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                    원본 뉴스 보기
+                </a>
+                <button class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                    </svg>
+                    공유하기
+                </button>
+            </div>
+            <div class="text-sm text-gray-500">
+                {{ articles|length }}개의 관련 기사
+            </div>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% endblock %}

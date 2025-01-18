@@ -481,6 +481,26 @@ document.addEventListener('DOMContentLoaded', async function() {
                         });
                     }
                     
+                    // 분석 결과 초기화 추가
+                    const results = document.getElementById('analysisResults');
+                    if (results) {
+                        results.classList.add('hidden');
+                        results.style.display = 'none';
+                    }
+        
+                    // 분석 결과 내용 초기화
+                    const sections = ['trendAnalysis', 'relationAnalysis', 'insightAnalysis'];
+                    sections.forEach(id => {
+                        const element = document.getElementById(id);
+                        if (element) element.textContent = '';
+                    });
+        
+                    // 통계 초기화
+                    ['totalArticles', 'totalPress', 'totalKeywords'].forEach(id => {
+                        const element = document.getElementById(id);
+                        if (element) element.textContent = '0';
+                    });
+
                     updateTags();
                     updateKeywordTags();
                     window.filterArticles();
@@ -589,113 +609,6 @@ function initializeSlider(index) {
         slider.style.transform = `translateY(-${currentPosition * 24}px)`;
     }, 5000);
 }
-
-// 태그 관련 함수들
-function updateTags() {
-    if (!selectedCompanies) return;
-    
-    selectedCompanies.innerHTML = '';
-    window.selectedCompanyList.forEach(company => {
-        const tag = document.createElement('div');
-        tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm';
-        tag.innerHTML = `
-            ${company}
-            <button class="text-blue-600 hover:text-blue-800" onclick="removeCompany('${company}')">×</button>
-        `;
-        selectedCompanies.appendChild(tag);
-    });
-}
-
-function updateKeywordTags() {
-    if (!selectedKeywords) return;
-    
-    selectedKeywords.innerHTML = '';
-    window.selectedKeywordList.forEach(keyword => {
-        const tag = document.createElement('div');
-        tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm';
-        tag.innerHTML = `
-            ${keyword}
-            <button class="text-green-600 hover:text-green-800" onclick="removeKeyword('${keyword}')">×</button>
-        `;
-        selectedKeywords.appendChild(tag);
-    });
-}
-
-// 태그 제거 함수들
-window.removeCompany = function(company) {
-    window.selectedCompanyList.delete(company);
-    Array.from(companyFilter.options).forEach(option => {
-        if (option.value === company) option.selected = false;
-    });
-    updateTags();
-    window.filterArticles();
-};
-
-window.removeKeyword = function(keyword) {
-    window.selectedKeywordList.delete(keyword);
-    Array.from(keywordFilter.options).forEach(option => {
-        if (option.value === keyword) option.selected = false;
-    });
-    updateKeywordTags();
-    window.filterArticles();
-};
-
-// 필터링 함수
-window.filterArticles = function() {
-    const selectedCompanies = Array.from(window.selectedCompanyList);
-    const selectedKeywords = Array.from(window.selectedKeywordList);
-    const filteredContainer = document.getElementById('filteredArticles');
-    
-    if (!filteredContainer) return;
-    
-    filteredContainer.innerHTML = '';
-    
-    if (selectedKeywords.length > 0 && selectedCompanies.length === 0) {
-        filteredContainer.innerHTML = '<p class="text-gray-500 text-center py-4">언론사를 먼저 선택해주세요.</p>';
-        const countElement = document.getElementById('filteredCount');
-        if (countElement) countElement.textContent = '';
-        return;
-    }
-    
-    if (selectedCompanies.length === 0 && selectedKeywords.length === 0) {
-        filteredContainer.innerHTML = '<p class="text-gray-500 text-center py-4">언론사와 키워드를 선택해주세요.</p>';
-        const countElement = document.getElementById('filteredCount');
-        if (countElement) countElement.textContent = '';
-        return;
-    }
-
-    const companyContainers = document.querySelectorAll('div[data-company]');
-    let totalArticles = 0;
-    
-    companyContainers.forEach(container => {
-        const company = container.dataset.company;
-        if (selectedCompanies.includes(company)) {
-            const articles = container.querySelectorAll('.article-item');
-            articles.forEach(article => {
-                const articleTitle = article.textContent.toLowerCase();
-                const matchesKeywords = selectedKeywords.length === 0 || 
-                    selectedKeywords.some(keyword => articleTitle.includes(keyword.toLowerCase()));
-                
-                if (matchesKeywords) {
-                    const clonedArticle = article.cloneNode(true);
-                    const articleWrapper = document.createElement('div');
-                    articleWrapper.className = 'flex items-center gap-2 mb-2';
-                    
-                    const companyName = document.createElement('span');
-                    companyName.className = 'text-sm font-bold text-blue-600';
-                    companyName.textContent = company;
-                    
-                    articleWrapper.appendChild(companyName);
-                    articleWrapper.appendChild(clonedArticle);
-                    filteredContainer.appendChild(articleWrapper);
-                    totalArticles++;
-                }
-            });
-        }
-    });
-    
-    document.getElementById('filteredCount').textContent = `(${totalArticles}건)`;
-};
 
 // 키워드 변경 이벤트 핸들러
 function handleKeywordChange(e) {
