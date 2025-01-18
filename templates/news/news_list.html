@@ -5,233 +5,140 @@
 {% block content %}
 {% csrf_token %}
 <div class="w-full px-2">
-    <!-- 새로고침 섹션 -->
-    <div class="flex justify-end mb-2">
-        <div class="flex items-center gap-2">
-            <span id="countdown">05:00</span>  <!-- 자동 새로고침 카운트다운 -->
-            <button onclick="location.reload()" class="px-4 py-2 bg-blue-500 text-white rounded-lg">
-                새로고침
-            </button>
-        </div>
-    </div>
-
     {% if request.resolver_match.url_name == 'top_articles' %}
         <!-- 기존 top_articles 섹션 전체 -->
-
         <div class="w-full">
             <!-- 필터링 결과 섹션 -->
-            <div class="w-1/2 mb-8">
-                <h1 class="text-2xl font-bold mb-4">
-                    주요 기사 필터링
-                    <span class="text-gray-500" id="filteredCount"></span>
-                </h1>
-                <div class="bg-white rounded-lg shadow p-4">
-                    <!-- 필터 컨트롤 섹션 -->
-                    <div class="flex flex-col gap-4 mb-4">
-                        <div class="flex flex-col gap-4">
-                            <div class="relative w-full">
-                                <select id="companyFilter" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
-                                    <option value="" selected class="text-gray-500 bg-gray-50">언론사 선택</option>
-                                    {% for company, articles in news_by_company.items %}
-                                        <option value="{{ company }}" class="text-gray-700 hover:bg-gray-100">
-                                            {{ company }} ({{ articles|length }})
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                                <div id="selectedCompanies" class="flex flex-wrap gap-2 mt-2">
-                                    <!-- 선택된 언론사 태그들 -->
-                                </div>
-                            </div>
-
-                            <div class="relative w-full">
-                                <select id="keywordFilter" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
-                                    <option value="" selected class="text-gray-500 bg-gray-50">키워드 선택</option>
-                                    {% for keyword, articles in keyword_articles.items %}
-                                        <option value="{{ keyword }}" class="text-gray-700 hover:bg-gray-100">
-                                            {{ keyword }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                                <div id="selectedKeywords" class="flex flex-wrap gap-2 mt-2">
-                                    <!-- 선택된 키워드 태그들 -->
-                                </div>
-                            </div>
-
-                            <div class="flex gap-2">
-                                <button id="resetFilters" class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                                    필터 초기화
-                                </button>
-                                <button id="analyzeBtn" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700">
-                                    분석하기
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 필터링된 기사 목록 -->
-                    <div id="filteredArticles" class="mt-4">
-                        <!-- 기사 목록 -->
-                    </div>
-
-                    <!-- 분석 결과 영역 -->
-                    <div id="analysisResults" class="bg-gray-50 rounded-lg p-4 min-h-[200px] hidden mb-4">
-                        <div class="space-y-4">
-                            <!-- 전체 통계 -->
-                            <div class="bg-white rounded p-3 shadow-sm">
-                                <h3 class="text-sm font-medium text-gray-700 mb-2">전체 통계</h3>
-                                
-                                <!-- 기본 통계만 표시 -->
-                                <div class="mb-4">
-                                    <span>분석 기사: <span id="totalArticles" class="font-medium">0</span>건</span>
-                                    <span class="mx-2">|</span>
-                                    <span>언론사: <span id="totalPress" class="font-medium">0</span>개</span>
-                                    <span class="mx-2">|</span>
-                                    <span>키워드: <span id="totalKeywords" class="font-medium">0</span>개</span>
-                                </div>
-                            </div>
-                            <!-- 분석 결과만 표시하고 하단의 중복 정보는 제거 -->
-                            <div class="space-y-4">
-                                <!-- 트렌드 분석 -->
-                                <div class="bg-white rounded p-3 shadow-sm">
-                                    <h3 class="text-sm font-medium text-gray-700 mb-2">트렌드 분석</h3>
-                                    <div class="space-y-2">
-                                        <p id="trendAnalysis" class="text-sm text-gray-600"></p>
-                                        <div id="topKeywords" class="flex flex-wrap gap-2 mt-2"></div>
-                                    </div>
-                                </div>
-                                
-                                <!-- 관계 분석 -->
-                                <div class="bg-white rounded p-3 shadow-sm">
-                                    <h3 class="text-sm font-medium text-gray-700 mb-2">관계 분석</h3>
-                                    <div class="space-y-2">
-                                        <p id="relationAnalysis" class="text-sm text-gray-600"></p>
-                                    </div>
-                                </div>
-                                
-                                <!-- 주요 인사이트 -->
-                                <div class="bg-white rounded p-3 shadow-sm">
-                                    <h3 class="text-sm font-medium text-gray-700 mb-2">주요 인사이트</h3>
-                                    <div class="space-y-2">
-                                        <p id="insightAnalysis" class="text-sm text-gray-600"></p>
-                                        <div id="keywordRelations" class="mt-2 text-sm"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-                    <!-- 하단 2단 그리드 섹션 -->
-                    <div class="grid grid-cols-2 gap-8">
-                        <!-- 언론사별 주요 기사 섹션 -->
-                        <div class="w-full">
-                            <h1 class="text-2xl font-bold mb-4">
-                                언론사별 주요 기사
-                                <span class="text-gray-500">({{ article_count }}건)</span>
-                            </h1>
-                            
-                            {% if news_by_company %}
-                                <!-- 언론사별 기사 표시 (간격 축소) -->
-                                <div class="space-y-2">
-                                    {% for company, articles in news_by_company.items %}
-                                    <div class="bg-white rounded-lg shadow p-2" data-company="{{ company }}">
-                                        <div class="flex items-center gap-1 mb-2 pb-1 border-b">
-                                            <span class="text-lg font-bold text-blue-600">{{ company }}</span>
-                                            <span class="text-sm text-gray-500">({{ articles|length }}건)</span>
-                                        </div>
-                                        <div class="space-y-1.5">
-                                            {% for article in articles %}
-                                            <div class="flex gap-1.5 article-item" data-keyword="{{ article.title }}">
-                                                <span class="text-sm font-bold {% if article.rank <= 3 %}text-blue-500{% else %}text-gray-400{% endif %} w-4">
-                                                    {{ article.rank }}
-                                                </span>
-                                                <a href="{{ article.url }}" target="_blank" 
-                                                   class="text-sm hover:text-blue-600 flex-1">
-                                                    {{ article.title }}
-                                                </a>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <!-- 기존 기사 목록 표시 유지 -->
-                                <div class="space-y-4">
-                                    {% for article in articles %}
-                                    <div class="bg-white rounded-lg shadow p-4">
-                                        <div class="flex flex-col gap-2">
-                                            <span class="text-base font-bold text-blue-600">{{ article.company_name }}</span>
-                                            <a href="{{ article.url }}" target="_blank" 
-                                               class="text-lg hover:text-blue-600">
-                                                {{ article.title }}
-                                            </a>
-                                        </div>
-                                    </div>
-                                    {% empty %}
-                                    <p class="text-gray-500 text-center py-8">관련 기사가 없습니다.</p>
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- 키워드별 주요 기사 섹션 -->
-                        <div class="w-full">
-                            <h1 class="text-2xl font-bold mb-4">
-                                키워드별 주요 기사
-                                <span class="text-gray-500">({{ total_keyword_articles }}건)</span>
-                            </h1>
-                            
-                            {% with shown_titles="" %}
-                                {% for keyword, articles in keyword_articles.items %}
-                                <div class="bg-white rounded-lg shadow p-3">
-                                    <div class="flex items-center gap-2 mb-2 pb-2 border-b whitespace-nowrap">
-                                        <span class="text-lg font-bold text-blue-600 flex-shrink-0">"{{ keyword }}" 관련</span>
-                                        <span class="text-sm text-gray-500">({{ articles|length }}건)</span>
-                                    </div>
-
-                                    <div class="space-y-2">
-                                        {% for article in articles %}
-                                            {% is_duplicate article.title shown_titles as is_shown %}
-                                            {% if not is_shown %}
-                                                <div class="flex gap-2 whitespace-nowrap overflow-hidden">
-                                                    <span class="text-sm text-gray-400 flex-shrink-0">{{ article.company_name }}</span>
-                                                    <a href="{{ article.url }}" target="_blank" 
-                                                       class="text-sm hover:text-blue-600 truncate">
-                                                        {{ article.title }}
-                                                    </a>
-                                                </div>
-                                                {% with shown_titles=shown_titles|add:article.title|add:"|||" %}{% endwith %}
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            {% endwith %}
-                        </div>
-                    </div>
-                </div>
-            {% elif keyword %}
-                <!-- 키워드 검색 결과 섹션 -->
-                <div class="mb-6 max-w-3xl ml-8">
+            <div class="flex gap-8">
+                <!-- 기존 필터 컨트롤 섹션 -->
+                <div class="w-1/2 mb-8">
                     <h1 class="text-2xl font-bold mb-4">
-                        "{{ keyword }}" 관련 기사
+                        주요 기사 분석
+                        <span class="text-gray-500" id="filteredCount"></span>
+                    </h1>
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <!-- 필터 컨트롤 섹션 -->
+                        <div class="flex flex-col gap-4 mb-4">
+                            <div class="flex flex-col gap-4">
+                                <div class="relative w-full">
+                                    <select id="companyFilter" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+                                        <option value="" selected class="text-gray-500 bg-gray-50">언론사 선택</option>
+                                        {% for company, articles in news_by_company.items %}
+                                            <option value="{{ company }}" class="text-gray-700 hover:bg-gray-100">
+                                                {{ company }} ({{ articles|length }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div id="selectedCompanies" class="flex flex-wrap gap-2 mt-2">
+                                        <!-- 선택된 언론사 태그들 -->
+                                    </div>
+                                </div>
+
+                                <div class="relative w-full">
+                                    <select id="keywordFilter" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+                                        <option value="" selected class="text-gray-500 bg-gray-50">키워드 선택</option>
+                                        {% for keyword, articles in keyword_articles.items %}
+                                            <option value="{{ keyword }}" class="text-gray-700 hover:bg-gray-100">
+                                                {{ keyword }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div id="selectedKeywords" class="flex flex-wrap gap-2 mt-2">
+                                        <!-- 선택된 키워드 태그들 -->
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-2">
+                                    <button id="resetFilters" class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                                        필터 초기화
+                                    </button>
+                                    <button id="analyzeBtn" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2">
+                                        <!-- Spinner SVG -->
+                                        <svg id="analyzeSpinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        분석하기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 필터링된 기사 목록 -->
+                        <div id="filteredArticles" class="mt-4">
+                            <!-- 기사 목록 -->
+                        </div>
+
+                        <!-- 분석 결과 영역 -->
+                        <div id="analysisResults" class="bg-gray-50 rounded-lg p-4 min-h-[200px] hidden mb-4">
+                            <div class="space-y-4">
+                                <!-- 전체 통계 -->
+                                <div class="bg-white rounded p-3 shadow-sm">
+                                    <h3 class="text-sm font-medium text-gray-700 mb-2">전체 통계</h3>
+                                    
+                                    <!-- 기본 통계만 표시 -->
+                                    <div class="mb-4">
+                                        <span>분석 기사: <span id="totalArticles" class="font-medium">0</span>건</span>
+                                        <span class="mx-2">|</span>
+                                        <span>언론사: <span id="totalPress" class="font-medium">0</span>개</span>
+                                        <span class="mx-2">|</span>
+                                        <span>키워드: <span id="totalKeywords" class="font-medium">0</span>개</span>
+                                    </div>
+                                </div>
+                                <!-- 분석 결과만 표시하고 하단의 중복 정보는 제거 -->
+                                <div class="space-y-4">
+                                    <!-- 트렌드 분석 -->
+                                    <div class="bg-white rounded p-3 shadow-sm">
+                                        <h3 class="text-sm font-medium text-gray-700 mb-2">트렌드 분석</h3>
+                                        <div class="space-y-2">
+                                            <p id="trendAnalysis" class="text-sm text-gray-600"></p>
+                                            <div id="topKeywords" class="flex flex-wrap gap-2 mt-2"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 관계 분석 -->
+                                    <div class="bg-white rounded p-3 shadow-sm">
+                                        <h3 class="text-sm font-medium text-gray-700 mb-2">관계 분석</h3>
+                                        <div class="space-y-2">
+                                            <p id="relationAnalysis" class="text-sm text-gray-600"></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 주요 인사이트 -->
+                                    <div class="bg-white rounded p-3 shadow-sm">
+                                        <h3 class="text-sm font-medium text-gray-700 mb-2">주요 인사이트</h3>
+                                        <div class="space-y-2">
+                                            <p id="insightAnalysis" class="text-sm text-gray-600"></p>
+                                            <div id="keywordRelations" class="mt-2 text-sm"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- 하단 2단 그리드 섹션 -->
+            <div class="grid grid-cols-2 gap-8">
+                <!-- 언론사별 주요 기사 섹션 -->
+                <div class="w-full">
+                    <h1 class="text-2xl font-bold mb-4">
+                        언론사별 주요 기사
                         <span class="text-gray-500">({{ article_count }}건)</span>
                     </h1>
                     
                     {% if news_by_company %}
-
-                        <!-- 언론사별 기사 표시 -->
+                        <!-- 언론사별 기사 표시 (간격 축소) -->
                         <div class="space-y-2">
                             {% for company, articles in news_by_company.items %}
-                            <div class="bg-white rounded-lg shadow p-2">
+                            <div class="bg-white rounded-lg shadow p-2" data-company="{{ company }}">
                                 <div class="flex items-center gap-1 mb-2 pb-1 border-b">
                                     <span class="text-lg font-bold text-blue-600">{{ company }}</span>
                                     <span class="text-sm text-gray-500">({{ articles|length }}건)</span>
                                 </div>
                                 <div class="space-y-1.5">
                                     {% for article in articles %}
-                                    <div class="flex gap-1.5">
+                                    <div class="flex gap-1.5 article-item" data-keyword="{{ article.title }}">
                                         <span class="text-sm font-bold {% if article.rank <= 3 %}text-blue-500{% else %}text-gray-400{% endif %} w-4">
                                             {{ article.rank }}
                                         </span>
@@ -264,353 +171,248 @@
                         </div>
                     {% endif %}
                 </div>
-            {% else %}
 
-                <!-- 실시간 뉴스 랭킹 (메인) -->
-                <div class="mb-3">
-                    <div class="flex justify-between gap-8">
-                        <!-- 실시간 주요 뉴스 섹션 -->
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-2">
-                                <h1 class="text-xl font-bold">실시간 주요 뉴스</h1>
-                                <span class="text-sm text-gray-500">
-                                    ({{ last_update|date:'Y.m.d H:i' }} 기준)
-                                </span>
-                            </div>
-                            <div class="grid gap-1">
-                                {% for item in daily_rankings %}
-                                <div class="bg-white rounded shadow-sm p-2">
-                                    <div class="flex flex-col gap-1">
-                                        <span class="text-base font-bold text-blue-600">{{ item.company_name }}</span>
-                                        <a href="{{ item.url }}" target="_blank" class="text-base hover:text-blue-600">{{ item.title }}</a>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-
-                        <!-- 주요 키워드 섹션 -->
-                        <div class="flex-1">
-                            <div class="flex justify-between items-center mb-2">
-                                <h1 class="text-xl font-bold">키워드 랭킹</h1>
+                <!-- 키워드별 주요 기사 섹션 -->
+                <div class="w-full">
+                    <h1 class="text-2xl font-bold mb-4">
+                        키워드별 주요 기사
+                        <span class="text-gray-500">({{ total_keyword_articles }}건)</span>
+                    </h1>
+                    
+                    {% with shown_titles="" %}
+                        {% for keyword, articles in keyword_articles.items %}
+                        <div class="bg-white rounded-lg shadow p-3">
+                            <div class="flex items-center gap-2 mb-2 pb-2 border-b whitespace-nowrap">
+                                <span class="text-lg font-bold text-blue-600 flex-shrink-0">"{{ keyword }}" 관련</span>
+                                <span class="text-sm text-gray-500">({{ articles|length }}건)</span>
                             </div>
 
-                            <div class="grid gap-1">
-                                {% for keyword, count, keyword_group in keyword_rankings %}
-                                <div class="bg-white rounded shadow-sm p-2">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-2 w-32">
-                                            <span class="text-base font-bold w-4">{{ forloop.counter }}</span>
-                                            <a href="{% url 'news:keyword_articles' keyword=keyword %}" 
-                                               class="text-blue-600 hover:text-blue-800 text-base font-medium 
-                                                      transition-colors flex items-center gap-1 whitespace-nowrap">
-                                                {{ keyword }}
-                                                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                                </svg>
+                            <div class="space-y-2">
+                                {% for article in articles %}
+                                    {% is_duplicate article.title shown_titles as is_shown %}
+                                    {% if not is_shown %}
+                                        <div class="flex gap-2 whitespace-nowrap overflow-hidden">
+                                            <span class="text-sm text-gray-400 flex-shrink-0">{{ article.company_name }}</span>
+                                            <a href="{{ article.url }}" target="_blank" 
+                                               class="text-sm hover:text-blue-600 truncate">
+                                                {{ article.title }}
                                             </a>
                                         </div>
-                                        <!-- 슬라이더 컨테이너 -->
-                                        <div class="relative w-[36rem] ml-1 overflow-hidden h-6">
-                                            <div id="keywordSlider{{ forloop.counter }}" class="flex flex-col transition-all duration-700">
-                                                {% with shown_titles="" %}
-                                                    {% for item in news_items %}
-                                                        {% if keyword in item.title or keyword in item.related_keywords %}
-                                                            {% is_duplicate item.title shown_titles as is_shown %}
-                                                            {% if not is_shown %}
-                                                                <div class="flex-shrink-0 h-6">
-                                                                    <a href="{{ item.url }}" target="_blank" 
-                                                                       class="text-sm hover:text-blue-600 truncate block">
-                                                                        <span class="text-gray-600">{{ item.title }}</span>
-                                                                    </a>
-                                                                </div>
-                                                                {% with shown_titles=shown_titles|add:item.title|add:"|||" %}{% endwith %}
-                                                            {% endif %}
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                {% endwith %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                        {% with shown_titles=shown_titles|add:article.title|add:"|||" %}{% endwith %}
+                                    {% endif %}
                                 {% endfor %}
                             </div>
                         </div>
-                    </div>
+                        {% endfor %}
+                    {% endwith %}
                 </div>
+            </div>
+        </div>
+    {% elif keyword %}
+        <!-- 키워드 검색 결과 섹션 -->
+        <div class="mb-6 max-w-3xl ml-8">
+            <h1 class="text-2xl font-bold mb-4">
+                "{{ keyword }}" 관련 기사
+                <span class="text-gray-500">({{ article_count }}건)</span>
+            </h1>
+            
+            {% if news_by_company %}
 
-                <!-- 실시간 랭킹 섹션 -->
-                <div class="mt-8">
-                    <div class="flex justify-between items-center mb-6">
-                        <h1 class="text-2xl font-bold">실시간 랭킹</h1>
-                    </div>
-                    
-                    {% regroup news_items by company_name as news_by_company %}
-                    
-                    <div class="grid grid-cols-4 gap-3">
-                        {% for company in news_by_company %}
-                        <div class="bg-white rounded-lg shadow p-2">
-                            <div class="flex items-center gap-3 mb-2 bg-gray-50 -mx-2 -mt-2 p-2">
-                                <div class="w-10 h-10 overflow-hidden rounded-full bg-white flex items-center justify-center">
-                                    <img src="{% static 'images/logos/'|add:company.grouper|add:'.png' %}" 
-                                         alt="{{ company.grouper }}"
-                                         class="{% if company.grouper in '세계일보,중앙일보,한겨레,한국일보' %}w-16 h-16{% else %}w-8 h-8{% endif %} object-contain"
-                                    />
-                                </div>
-                                <h2 class="text-base font-bold">{{ company.grouper }}</h2>
+                <!-- 언론사별 기사 표시 -->
+                <div class="space-y-2">
+                    {% for company, articles in news_by_company.items %}
+                    <div class="bg-white rounded-lg shadow p-2">
+                        <div class="flex items-center gap-1 mb-2 pb-1 border-b">
+                            <span class="text-lg font-bold text-blue-600">{{ company }}</span>
+                            <span class="text-sm text-gray-500">({{ articles|length }}건)</span>
+                        </div>
+                        <div class="space-y-1.5">
+                            {% for article in articles %}
+                            <div class="flex gap-1.5">
+                                <span class="text-sm font-bold {% if article.rank <= 3 %}text-blue-500{% else %}text-gray-400{% endif %} w-4">
+                                    {{ article.rank }}
+                                </span>
+                                <a href="{{ article.url }}" target="_blank" 
+                                   class="text-sm hover:text-blue-600 flex-1">
+                                    {{ article.title }}
+                                </a>
                             </div>
-                            <div class="space-y-2.5">
-                                {% for item in company.list %}
-                                <div class="flex gap-2.5">
-                                    <span class="text-sm font-bold {% if item.rank <= 3 %}text-blue-500{% else %}text-gray-300{% endif %} 
-                                           w-4 flex-shrink-0 text-center">{{ item.rank }}</span>
-                                    <a href="{{ item.url }}" target="_blank" 
-                                       class="text-sm hover:text-blue-600 leading-5 line-clamp-2 
-                                              {% if item.rank <= 3 %}text-gray-900{% else %}text-gray-600{% endif %}">
-                                        {{ item.title }}
-                                    </a>
-                                </div>
-                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- 기존 기사 목록 표시 유지 -->
+                <div class="space-y-4">
+                    {% for article in articles %}
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex flex-col gap-2">
+                            <span class="text-base font-bold text-blue-600">{{ article.company_name }}</span>
+                            <a href="{{ article.url }}" target="_blank" 
+                               class="text-lg hover:text-blue-600">
+                                {{ article.title }}
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500 text-center py-8">관련 기사가 없습니다.</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+
+        <!-- 실시간 뉴스 랭킹 (메인) -->
+        <div class="mb-3">
+            <div class="flex justify-between gap-8">
+                <!-- 실시간 주요 뉴스 섹션 -->
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <h1 class="text-xl font-bold">실시간 주요 뉴스</h1>
+                        <span class="text-sm text-gray-500">
+                            ({{ last_update|date:'Y.m.d H:i' }} 기준)
+                        </span>
+                    </div>
+                    <div class="grid gap-1">
+                        {% for item in daily_rankings %}
+                        <div class="bg-white rounded shadow-sm p-2">
+                            <div class="flex flex-col gap-1">
+                                <span class="text-base font-bold text-blue-600">{{ item.company_name }}</span>
+                                <a href="{{ item.url }}" target="_blank" class="text-base hover:text-blue-600">{{ item.title }}</a>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
-            {% endif %}
+
+                <!-- 주요 키워드 섹션 -->
+                <div class="flex-1">
+                    <div class="flex justify-between items-center mb-2">
+                        <h1 class="text-xl font-bold">키워드 랭킹</h1>
+                    </div>
+
+                    <div class="grid gap-1">
+                        {% for keyword, count, keyword_group in keyword_rankings %}
+                        <div class="bg-white rounded shadow-sm p-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2 w-32">
+                                    <span class="text-base font-bold w-4">{{ forloop.counter }}</span>
+                                    <a href="{% url 'news:keyword_articles' keyword=keyword %}" 
+                                       class="text-blue-600 hover:text-blue-800 text-base font-medium 
+                                              transition-colors flex items-center gap-1 whitespace-nowrap">
+                                        {{ keyword }}
+                                        <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </a>
+                                </div>
+                                <!-- 슬라이더 컨테이너 -->
+                                <div class="relative w-[36rem] ml-1 overflow-hidden h-6">
+                                    <div id="keywordSlider{{ forloop.counter }}" class="flex flex-col transition-all duration-700">
+                                        {% with shown_titles="" %}
+                                            {% for item in news_items %}
+                                                {% if keyword in item.title or keyword in item.related_keywords %}
+                                                    {% is_duplicate item.title shown_titles as is_shown %}
+                                                    {% if not is_shown %}
+                                                        <div class="flex-shrink-0 h-6">
+                                                            <a href="{{ item.url }}" target="_blank" 
+                                                               class="text-sm hover:text-blue-600 truncate block">
+                                                                <span class="text-gray-600">{{ item.title }}</span>
+                                                            </a>
+                                                        </div>
+                                                        {% with shown_titles=shown_titles|add:item.title|add:"|||" %}{% endwith %}
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div id="pressDistribution" class="text-sm text-gray-600 mt-2"></div>
-        <div id="keywordRankings" class="text-sm text-gray-600 mt-2"></div>
-    {% endblock content %}
-
-    {% block extra_js %}
-    <script src="{% static 'js/timer.js' %}"></script>
-    <script>
-    // 15분 카운트다운 타이머 개선
-    function startCountdown() {
-        // Django 템플릿 변수를 JavaScript 변수로 먼저 선언
-        const serverLastUpdate = "{{ last_update|date:'Y-m-d H:i:s' }}";
-        console.log('서버 시간:', serverLastUpdate); // 값 확인용
-        
-        const lastUpdate = new Date(serverLastUpdate);
-        const now = new Date();
-        
-        // 값 검증
-        if (isNaN(lastUpdate.getTime())) {
-            console.error('잘못된 날짜 형식:', serverLastUpdate);
-            return;
-        }
-        
-        // 경과 시간 계산 (초 단위)
-        const elapsedSeconds = Math.floor((now - lastUpdate) / 1000);
-        
-        // 남은 시간 계산 (15분 = 900초)
-        let timeLeft = Math.max(900 - elapsedSeconds, 0);
-        
-        // 이전 타이머 제거
-        if (window.countdownTimer) {
-            clearInterval(window.countdownTimer);
-        }
-        
-        function updateTimer() {
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
+        <!-- 실시간 랭킹 섹션 -->
+        <div class="mt-8">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold">실시간 랭킹</h1>
+            </div>
             
-            const countdownElement = document.getElementById('countdown');
-            if (countdownElement) {
-                countdownElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                
-                // 시간에 따른 색상 변경
-                if (timeLeft <= 60) { // 1분 이하
-                    countdownElement.classList.add('text-red-500');
-                } else if (timeLeft <= 180) { // 3분 이하
-                    countdownElement.classList.add('text-yellow-500');
-                }
-            }
+            {% regroup news_items by company_name as news_by_company %}
             
-            // 시간이 다 되면 페이지 새로고침
-            if (timeLeft <= 0) {
-                clearInterval(window.countdownTimer);
-                location.reload();
-            } else {
-                timeLeft--;
-            }
-        }
-        
-        // 초기 타이머 표시
-        updateTimer();
-        
-        // 1초마다 업데이트하고 전역 변수로 저장
-        window.countdownTimer = setInterval(updateTimer, 1000);
-    }
+            <div class="grid grid-cols-4 gap-3">
+                {% for company in news_by_company %}
+                <div class="bg-white rounded-lg shadow p-2">
+                    <div class="flex items-center gap-3 mb-2 bg-gray-50 -mx-2 -mt-2 p-2">
+                        <div class="w-10 h-10 overflow-hidden rounded-full bg-white flex items-center justify-center">
+                            <img src="{% static 'images/logos/'|add:company.grouper|add:'.png' %}" 
+                                 alt="{{ company.grouper }}"
+                                 class="{% if company.grouper in '세계일보,중앙일보,한겨레,한국일보' %}w-16 h-16{% else %}w-8 h-8{% endif %} object-contain"
+                            />
+                        </div>
+                        <h2 class="text-base font-bold">{{ company.grouper }}</h2>
+                    </div>
+                    <div class="space-y-2.5">
+                        {% for item in company.list %}
+                        <div class="flex gap-2.5">
+                            <span class="text-sm font-bold {% if item.rank <= 3 %}text-blue-500{% else %}text-gray-300{% endif %} 
+                                   w-4 flex-shrink-0 text-center">{{ item.rank }}</span>
+                            <a href="{{ item.url }}" target="_blank" 
+                               class="text-sm hover:text-blue-600 leading-5 line-clamp-2 
+                                      {% if item.rank <= 3 %}text-gray-900{% else %}text-gray-600{% endif %}">
+                                {{ item.title }}
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
 
-    // 페이지 로드 시 타이머 시작
-    document.addEventListener('DOMContentLoaded', startCountdown);
+<div id="pressDistribution" class="text-sm text-gray-600 mt-2"></div>
+<div id="keywordRankings" class="text-sm text-gray-600 mt-2"></div>
 
-    // 페이지가 백그라운드에서 포커스를 받으면 타이머 재동기화
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) {
-            startCountdown();
-        }
-    });
-    </script>
+<div id="crewAnalysisSpinner" class="hidden">
+    <div class="flex justify-center items-center h-40">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+    </div>
+</div>
 
-    <!-- 필터링 및 분석 기능 구현 스크립트 -->
-    <script>
-    // 1. 전역 변수 초기화 - 최상단에 배치
-    Object.assign(window, {
-        isAnalyzing: false,
-        selectedCompanyList: window.selectedCompanyList || new Set(),
-        selectedKeywordList: window.selectedKeywordList || new Set(),
-        companyFilter: null,
-        keywordFilter: null,
-        selectedCompanies: null,
-        selectedKeywords: null
-    });
+<div id="crewAnalysisContent" class="hidden">
+    <!-- 자동 분석 결과가 여기에 표시됩니다 -->
+</div>
+{% endblock content %}
 
-    // 태그 관련 함수들
-    function updateTags() {
-        if (!selectedCompanies) return;
-        
-        selectedCompanies.innerHTML = '';
-        window.selectedCompanyList.forEach(company => {
-            const tag = document.createElement('div');
-            tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm';
-            tag.innerHTML = `
-                ${company}
-                <button class="text-blue-600 hover:text-blue-800" onclick="removeCompany('${company}')">×</button>
-            `;
-            selectedCompanies.appendChild(tag);
-        });
-    }
+{% block extra_js %}
+<script>
+// 1. 전역 변수 초기화
+Object.assign(window, {
+    isAnalyzing: false,
+    selectedCompanyList: new Set(),
+    selectedKeywordList: new Set(),
+    companyFilter: null,
+    keywordFilter: null,
+    selectedCompanies: null,
+    selectedKeywords: null
+});
 
-    function updateKeywordTags() {
-        if (!selectedKeywords) return;
-        
-        selectedKeywords.innerHTML = '';
-        window.selectedKeywordList.forEach(keyword => {
-            const tag = document.createElement('div');
-            tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm';
-            tag.innerHTML = `
-                ${keyword}
-                <button class="text-green-600 hover:text-green-800" onclick="removeKeyword('${keyword}')">×</button>
-            `;
-            selectedKeywords.appendChild(tag);
-        });
-    }
-
-    // 필터링 관련 함수들
-    window.filterArticles = function() {
-        const selectedCompanies = Array.from(window.selectedCompanyList);
-        const selectedKeywords = Array.from(window.selectedKeywordList);
-        const filteredContainer = document.getElementById('filteredArticles');
-        
-        if (!filteredContainer) return;
-        
-        filteredContainer.innerHTML = '';
-        
-        if (selectedKeywords.length > 0 && selectedCompanies.length === 0) {
-            filteredContainer.innerHTML = '<p class="text-gray-500 text-center py-4">언론사를 먼저 선택해주세요.</p>';
-            const countElement = document.getElementById('filteredCount');
-            if (countElement) countElement.textContent = '';
-            return;
-        }
-        
-        if (selectedCompanies.length === 0 && selectedKeywords.length === 0) {
-            filteredContainer.innerHTML = '<p class="text-gray-500 text-center py-4">언론사와 키워드를 선택해주세요.</p>';
-            const countElement = document.getElementById('filteredCount');
-            if (countElement) countElement.textContent = '';
-            return;
-        }
-
-        const companyContainers = document.querySelectorAll('div[data-company]');
-        let totalArticles = 0;
-        
-        companyContainers.forEach(container => {
-            const company = container.dataset.company;
-            if (selectedCompanies.includes(company)) {
-                const articles = container.querySelectorAll('.article-item');
-                articles.forEach(article => {
-                    const articleTitle = article.textContent.toLowerCase();
-                    const matchesKeywords = selectedKeywords.length === 0 || 
-                        selectedKeywords.some(keyword => articleTitle.includes(keyword.toLowerCase()));
-                    
-                    if (matchesKeywords) {
-                        const clonedArticle = article.cloneNode(true);
-                        const articleWrapper = document.createElement('div');
-                        articleWrapper.className = 'flex items-center gap-2 mb-2';
-                        
-                        const companyName = document.createElement('span');
-                        companyName.className = 'text-sm font-bold text-blue-600';
-                        companyName.textContent = company;
-                        
-                        articleWrapper.appendChild(companyName);
-                        articleWrapper.appendChild(clonedArticle);
-                        filteredContainer.appendChild(articleWrapper);
-                        totalArticles++;
-                    }
-                });
-            }
-        });
-        
-        document.getElementById('filteredCount').textContent = `(${totalArticles}건)`;
-    };
-
-    // 태그 제거 함수들
-    window.removeCompany = function(company) {
-        window.selectedCompanyList.delete(company);
-        Array.from(companyFilter.options).forEach(option => {
-            if (option.value === company) option.selected = false;
-        });
-        updateTags();
-        window.filterArticles();
-    };
-
-    window.removeKeyword = function(keyword) {
-        window.selectedKeywordList.delete(keyword);
-        Array.from(keywordFilter.options).forEach(option => {
-            if (option.value === keyword) option.selected = false;
-        });
-        updateKeywordTags();
-        filterArticles();
-    };
-
-    // 이벤트 핸들러 함수들
-    function handleKeywordChange(e) {
-        const option = e.target.options[e.target.selectedIndex];
-        if (option.value === "") return;
-        
-        if (window.selectedKeywordList.size >= 5 && !window.selectedKeywordList.has(option.value)) {
-            alert('최대 5개의 키워드만 선택할 수 있습니다.');
-            option.selected = false;
-            return;
-        }
-        
-        if (option.selected) {
-            window.selectedKeywordList.add(option.value);
-        } else {
-            window.selectedKeywordList.delete(option.value);
-        }
-        
-        updateKeywordTags();
-        filterArticles();
-    }
-
-    // 1. 전역 변수 초기화
-    Object.assign(window, {
-        isAnalyzing: false,
-        selectedCompanyList: new Set(),
-        selectedKeywordList: new Set(),
-        companyFilter: null,
-        keywordFilter: null,
-        selectedCompanies: null,
-        selectedKeywords: null
-    });
-
-    // DOM 초기화 및 이벤트 리스너
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM loaded');  // DOM 로드 확인
-        console.log('analyzeBtn exists:', !!document.getElementById('analyzeBtn'));
+// DOM 초기화 및 이벤트 리스너
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('DOM loaded');
+    
+    // 페이지 타입 확인
+    const isTopArticlesPage = window.location.pathname.includes('/news/top/');
+    const hasSliders = document.querySelectorAll('[id^="keywordSlider"]').length > 0;
+    
+    // 주요 기사 페이지 기능
+    if (isTopArticlesPage) {
         // DOM 요소 초기화
         window.elements = {
             companyFilter: document.getElementById('companyFilter'),
@@ -619,456 +421,535 @@
             analyzeBtn: document.getElementById('analyzeBtn'),
             analyzeSpinner: document.getElementById('analyzeSpinner'),
             selectedCompanies: document.getElementById('selectedCompanies'),
-            selectedKeywords: document.getElementById('selectedKeywords')
+            selectedKeywords: document.getElementById('selectedKeywords'),
         };
 
-        console.log('elements after init:', elements);  // elements 객체 상태 확인
+        console.log('elements after init:', elements);
 
-        // 현재 페이지가 top_articles인 경우에만 분석 관련 요소 필요
-        const isTopArticlesPage = window.location.pathname.includes('/news/top/');
-        console.log('isTopArticlesPage:', isTopArticlesPage);  // 페이지 체크 확인
-        // 전역 변수에 필요한 요소 할당 
-        if (elements.companyFilter) {
+        // 필터링 관련 코드
+        if (!elements.companyFilter) {
+            console.warn('필터링에 필요한 DOM 요소를 찾을 수 없습니다.');
+        } else {
+            // 전역 변수에 필요한 요소 할당
             window.companyFilter = elements.companyFilter;
             window.selectedCompanies = elements.selectedCompanies;
             
-            // keywordFilter는 별도로 체크
             if (elements.keywordFilter) {
                 window.keywordFilter = elements.keywordFilter;
                 window.selectedKeywords = elements.selectedKeywords;
             }
-        }
 
-        // 필수 요소 체크 
-        if (!elements.companyFilter) {
-            console.warn('필터링에 필요한 DOM 요소를 찾을 수 없습니다.');
-            return;
-        }
-
-        // 언론사 선택 이벤트
-        elements.companyFilter.addEventListener('change', function(e) {
-            const option = e.target.options[e.target.selectedIndex];
-            if (option.value === "") return;
-            
-            if (window.selectedCompanyList.size >= 3 && !window.selectedCompanyList.has(option.value)) {
-                alert('최대 3개의 언론사만 선택할 수 있습니다.');
-                option.selected = false;
-                return;
-            }
-            
-            if (option.selected) {
-                window.selectedCompanyList.add(option.value);
-            } else {
-                window.selectedCompanyList.delete(option.value);
-            }
-            
-            updateTags();
-            filterArticles();
-        });
-
-        // 키워드 필터 이벤트
-        if (elements.keywordFilter) {
-            elements.keywordFilter.addEventListener('change', handleKeywordChange);
-        }
-
-        // 리셋 버튼 이벤트
-        if (elements.resetButton) {
-            elements.resetButton.addEventListener('click', function() {
-                window.selectedCompanyList.clear();
-                window.selectedKeywordList.clear();
+            // 언론사 선택 이벤트
+            elements.companyFilter.addEventListener('change', function(e) {
+                const option = e.target.options[e.target.selectedIndex];
+                if (option.value === "") return;
                 
-                Array.from(elements.companyFilter.options).forEach(option => {
+                if (window.selectedCompanyList.size >= 3 && !window.selectedCompanyList.has(option.value)) {
+                    alert('최대 3개의 언론사만 선택할 수 있습니다.');
                     option.selected = false;
-                });
+                    return;
+                }
                 
-                if (elements.keywordFilter) {
-                    Array.from(elements.keywordFilter.options).forEach(option => {
-                        option.selected = false;
-                    });
+                if (option.selected) {
+                    window.selectedCompanyList.add(option.value);
+                } else {
+                    window.selectedCompanyList.delete(option.value);
                 }
                 
                 updateTags();
-                updateKeywordTags();
-                window.filterArticles();
+                filterArticles();
             });
-        }
 
-        // 분석 버튼 이벤트
-        if (isTopArticlesPage && elements.analyzeBtn) {
-            console.log('Attempting to add click event');  // 이벤트 추가 시도 확인
-            const analyzeBtn = elements.analyzeBtn;  // 로컬 변수로 저장
-            const analyzeSpinner = elements.analyzeSpinner;  // 로컬 변수로 저장
-            analyzeBtn.addEventListener('click', async function() {
-                console.log('Button clicked');  // 클릭 이벤트 발생 확인
-                if (window.isAnalyzing) return;
+            // 키워드 필터 이벤트
+            if (elements.keywordFilter) {
+                elements.keywordFilter.addEventListener('change', handleKeywordChange);
+            }
 
-                if (window.selectedCompanyList.size === 0 && window.selectedKeywordList.size === 0) {
-                    alert('분석할 언론사나 키워드를 선택해주세요.');
-                    return;
-                }
-
-                try {
-                    window.isAnalyzing = true;
-                    analyzeBtn.disabled = true;
-                    elements.analyzeSpinner?.classList.remove('hidden');
-
-                    // 요청 데이터 로깅
-                    const requestData = {
-                        companies: Array.from(window.selectedCompanyList),
-                        keywords: Array.from(window.selectedKeywordList)
-                    };
-                    console.log('Request data:', requestData);
-
-                    const response = await fetch('/news/analyze/trends/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                        },
-                        body: JSON.stringify(requestData)
+            // 리셋 버튼 이벤트
+            if (elements.resetButton) {
+                elements.resetButton.addEventListener('click', function() {
+                    window.selectedCompanyList.clear();
+                    window.selectedKeywordList.clear();
+                    
+                    Array.from(elements.companyFilter.options).forEach(option => {
+                        option.selected = false;
                     });
                     
-                    // 응답 상태 로깅
-                    console.log('Response status:', response.status);
+                    if (elements.keywordFilter) {
+                        Array.from(elements.keywordFilter.options).forEach(option => {
+                            option.selected = false;
+                        });
+                    }
                     
-                    if (!response.ok) {
-                        throw new Error(`서버 응답 오류: ${response.status}`);
+                    // 분석 결과 초기화 추가
+                    const results = document.getElementById('analysisResults');
+                    if (results) {
+                        results.classList.add('hidden');
+                        results.style.display = 'none';
+                    }
+        
+                    // 분석 결과 내용 초기화
+                    const sections = ['trendAnalysis', 'relationAnalysis', 'insightAnalysis'];
+                    sections.forEach(id => {
+                        const element = document.getElementById(id);
+                        if (element) element.textContent = '';
+                    });
+        
+                    // 통계 초기화
+                    ['totalArticles', 'totalPress', 'totalKeywords'].forEach(id => {
+                        const element = document.getElementById(id);
+                        if (element) element.textContent = '0';
+                    });
+
+                    updateTags();
+                    updateKeywordTags();
+                    window.filterArticles();
+                });
+            }
+
+            // 분석 버튼 이벤트
+            if (elements.analyzeBtn) {
+                elements.analyzeBtn.addEventListener('click', async function() {
+                    if (window.isAnalyzing) return;
+
+                    if (window.selectedCompanyList.size === 0 && window.selectedKeywordList.size === 0) {
+                        alert('분석할 언론사나 키워드를 선택해주세요.');
+                        return;
                     }
 
-                    const data = await response.json();
-                    console.log('Response data:', data);  // 응답 데이터 확인
-
-                    if (data.success) {
-                        const results = document.getElementById('analysisResults');
-                        console.log('Results element:', results);  // results 요소 확인
-
-                        if (!results) {
-                            throw new Error('분석 결과를 표시할 요소를 찾을 수 없습니다.');
+                    try {
+                        window.isAnalyzing = true;
+                        elements.analyzeBtn.disabled = true;
+                        
+                        if (elements.analyzeSpinner) {
+                            elements.analyzeSpinner.classList.remove('hidden');
+                            elements.analyzeBtn.classList.add('opacity-50', 'cursor-not-allowed');
                         }
 
-                        results.classList.remove('hidden');
-                        
-                        // 각 분석 결과 요소 확인
-                        const elements = {
-                            trend: document.getElementById('trendAnalysis'),
-                            relation: document.getElementById('relationAnalysis'),
-                            insight: document.getElementById('insightAnalysis')
+                        const requestData = {
+                            companies: Array.from(window.selectedCompanyList),
+                            keywords: Array.from(window.selectedKeywordList)
                         };
+
+                        const response = await fetch('/news/analyze/trends/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                            },
+                            body: JSON.stringify(requestData)
+                        });
                         
-                        console.log('Analysis elements:', elements);  // 분석 결과 요소들 확인
-                        console.log('Analysis data:', data.analysis);  // 분석 데이터 확인
+                        if (!response.ok) {
+                            throw new Error(`서버 응답 오류: ${response.status}`);
+                        }
 
-                        // 분석 결과 업데이트 함수 호출 추가
-                        updateAnalysisResults(data);
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            const results = document.getElementById('analysisResults');
+                            if (!results) {
+                                throw new Error('분석 결과를 표시할 요소를 찾을 수 없습니다.');
+                            }
 
-                        results.style.display = 'block';  // 결과 컨테이너 보이게 설정
-                        results.scrollIntoView({ behavior: 'smooth' });
-                    } else {
-                        throw new Error(data.error || '분석 결과를 가져오는데 실패했습니다.');
+                            results.classList.remove('hidden');
+                            updateAnalysisResults(data);
+                            results.style.display = 'block';
+                            results.scrollIntoView({ behavior: 'smooth' });
+                        } else {
+                            throw new Error(data.error || '분석 결과를 가져오는데 실패했습니다.');
+                        }
+
+                    } catch (error) {
+                        console.error('분석 중 상세 오류:', error);
+                        alert(`분석 중 오류가 발생했습니다: ${error.message}`);
+                    } finally {
+                        window.isAnalyzing = false;
+                        elements.analyzeBtn.disabled = false;
+                        
+                        if (elements.analyzeSpinner) {
+                            elements.analyzeSpinner.classList.add('hidden');
+                            elements.analyzeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
                     }
+                });
+            }
 
-                } catch (error) {
-                    console.error('분석 중 상세 오류:', error);
-                    alert(`분석 중 오류가 발생했습니다: ${error.message}`);
-                } finally {
-                    window.isAnalyzing = false;
-                    analyzeBtn.disabled = false;
-                    elements.analyzeSpinner?.classList.add('hidden');
-                }
-            });
+            // 초기 필터링 실행
+            window.filterArticles();
         }
-
-        // 초기 필터링 실행
-        window.filterArticles();
-        
-
-        // 키워드 슬라이더 초기화
+    }
+    
+    // 슬라이더 초기화 - 페이지 타입과 관계없이 독립적으로 실행
+    if (hasSliders) {
+        console.log('슬라이더 초기화 시작');
         const keywordRankings = document.querySelectorAll('[id^="keywordSlider"]');
+        console.log('발견된 슬라이더:', keywordRankings.length);
+
         keywordRankings.forEach((slider, index) => {
+            console.log(`슬라이더 ${index + 1} 초기화`);
             initializeSlider(index + 1);
         });
+    }
+});
+
+// 키워드 슬라이더 함수
+function initializeSlider(index) {
+    const slider = document.getElementById(`keywordSlider${index}`);
+    if (!slider || slider.children.length <= 1) {
+        console.log(`슬라이더 ${index}: 초기화 건너뜀 (요소 없음 또는 항목 부족)`);
+        return;
+    }
+    
+    console.log(`슬라이더 ${index}: ${slider.children.length}개 항목으로 초기화`);
+    let currentPosition = 0;
+    
+    setInterval(() => {
+        currentPosition = (currentPosition + 1) % slider.children.length;
+        slider.style.transform = `translateY(-${currentPosition * 24}px)`;
+    }, 5000);
+}
+
+// 키워드 변경 이벤트 핸들러
+function handleKeywordChange(e) {
+    const option = e.target.options[e.target.selectedIndex];
+    if (option.value === "") return;
+    
+    if (window.selectedKeywordList.size >= 5 && !window.selectedKeywordList.has(option.value)) {
+        alert('최대 5개의 키워드만 선택할 수 있습니다.');
+        option.selected = false;
+        return;
+    }
+    
+    if (option.selected) {
+        window.selectedKeywordList.add(option.value);
+    } else {
+        window.selectedKeywordList.delete(option.value);
+    }
+    
+    updateKeywordTags();
+    filterArticles();
+}
+
+// 분석 결과 업데이트 함수
+function updateAnalysisResults(data) {
+    if (!data?.analysis) {
+        console.error('Invalid analysis data:', data);
+        return;
+    }
+
+    const totalArticles = document.getElementById('totalArticles');
+    const totalPress = document.getElementById('totalPress');
+    const totalKeywords = document.getElementById('totalKeywords');
+    
+    if (totalArticles) totalArticles.textContent = data.analysis.filtered_count ?? '0';
+    if (totalPress) totalPress.textContent = window.selectedCompanyList.size;
+    if (totalKeywords) totalKeywords.textContent = window.selectedKeywordList.size;
+
+    const updateSection = (elementId, content) => {
+        const element = document.getElementById(elementId);
+        if (element && content) {
+            element.textContent = content;
+            element.style.whiteSpace = 'pre-line';
+        }
+    };
+
+    if (data.analysis.llm_analysis) {
+        updateSection('trendAnalysis', data.analysis.llm_analysis.trends);
+        updateSection('relationAnalysis', data.analysis.llm_analysis.relations);
+        updateSection('insightAnalysis', data.analysis.llm_analysis.insights);
+    }
+
+    const results = document.getElementById('analysisResults');
+    if (results) {
+        results.classList.remove('hidden');
+        results.style.display = 'block';
+    }
+}
+
+// 페이지 이탈 시 처리
+window.addEventListener('beforeunload', function() {
+    if (window.isAnalyzing) {
+        window.isAnalyzing = false;
+    }
+});
+</script>
+
+<script>
+// 2. 태그 관련 함수들
+function updateTags() {
+    if (!selectedCompanies) return;
+    
+    selectedCompanies.innerHTML = '';
+    window.selectedCompanyList.forEach(company => {
+        const tag = document.createElement('div');
+        tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm';
+        tag.innerHTML = `
+            ${company}
+            <button class="text-blue-600 hover:text-blue-800" onclick="removeCompany('${company}')">×</button>
+        `;
+        selectedCompanies.appendChild(tag);
     });
+}
 
-    // 키워드 슬라이더 함수
-    function initializeSlider(index) {
-        const slider = document.getElementById(`keywordSlider${index}`);
-        if (!slider || slider.children.length <= 1) return;
-
-        let currentPosition = 0;
-        
-        setInterval(() => {
-            currentPosition = (currentPosition + 1) % slider.children.length;
-            slider.style.transform = `translateY(-${currentPosition * 24}px)`;
-        }, 5000);
-    }
-
-    // 페이지 이탈 시 처리
-    window.addEventListener('beforeunload', function() {
-        if (window.isAnalyzing) {
-            window.isAnalyzing = false;
-        }
+function updateKeywordTags() {
+    if (!selectedKeywords) return;
+    
+    selectedKeywords.innerHTML = '';
+    window.selectedKeywordList.forEach(keyword => {
+        const tag = document.createElement('div');
+        tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm';
+        tag.innerHTML = `
+            ${keyword}
+            <button class="text-green-600 hover:text-green-800" onclick="removeKeyword('${keyword}')">×</button>
+        `;
+        selectedKeywords.appendChild(tag);
     });
-    </script>
+}
 
-    <script src="{% static 'js/timer.js' %}"></script>
-    <script>
+// 3. 태그 제거 함수들
+window.removeCompany = function(company) {
+    window.selectedCompanyList.delete(company);
+    Array.from(companyFilter.options).forEach(option => {
+        if (option.value === company) option.selected = false;
+    });
+    updateTags();
+    window.filterArticles();
+};
 
-    // 2. 태그 관련 함수들
-    function updateTags() {
-        if (!selectedCompanies) return;
-        
-        selectedCompanies.innerHTML = '';
-        window.selectedCompanyList.forEach(company => {
-            const tag = document.createElement('div');
-            tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm';
-            tag.innerHTML = `
-                ${company}
-                <button class="text-blue-600 hover:text-blue-800" onclick="removeCompany('${company}')">×</button>
-            `;
-            selectedCompanies.appendChild(tag);
-        });
+window.removeKeyword = function(keyword) {
+    window.selectedKeywordList.delete(keyword);
+    Array.from(keywordFilter.options).forEach(option => {
+        if (option.value === keyword) option.selected = false;
+    });
+    updateKeywordTags();
+    window.filterArticles();
+};
+
+// 4. 필터링 함수
+window.filterArticles = function() {
+    const selectedCompanies = Array.from(window.selectedCompanyList);
+    const selectedKeywords = Array.from(window.selectedKeywordList);
+    const filteredContainer = document.getElementById('filteredArticles');
+    
+    if (!filteredContainer) return;
+    
+    filteredContainer.innerHTML = '';
+    
+    if (selectedKeywords.length > 0 && selectedCompanies.length === 0) {
+        filteredContainer.innerHTML = '<p class="text-gray-500 text-center py-4">언론사를 먼저 선택해주세요.</p>';
+        const countElement = document.getElementById('filteredCount');
+        if (countElement) countElement.textContent = '';
+        return;
+    }
+    
+    if (selectedCompanies.length === 0 && selectedKeywords.length === 0) {
+        filteredContainer.innerHTML = '<p class="text-gray-500 text-center py-4">언론사와 키워드를 선택해주세요.</p>';
+        const countElement = document.getElementById('filteredCount');
+        if (countElement) countElement.textContent = '';
+        return;
     }
 
-    function updateKeywordTags() {
-        if (!selectedKeywords) return;
-        
-        selectedKeywords.innerHTML = '';
-        window.selectedKeywordList.forEach(keyword => {
-            const tag = document.createElement('div');
-            tag.className = 'inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm';
-            tag.innerHTML = `
-                ${keyword}
-                <button class="text-green-600 hover:text-green-800" onclick="removeKeyword('${keyword}')">×</button>
-            `;
-            selectedKeywords.appendChild(tag);
-        });
-    }
-
-    // 3. 태그 제거 함수들
-    window.removeCompany = function(company) {
-        window.selectedCompanyList.delete(company);
-        Array.from(companyFilter.options).forEach(option => {
-            if (option.value === company) option.selected = false;
-        });
-        updateTags();
-        window.filterArticles();
-    };
-
-    window.removeKeyword = function(keyword) {
-        window.selectedKeywordList.delete(keyword);
-        Array.from(keywordFilter.options).forEach(option => {
-            if (option.value === keyword) option.selected = false;
-        });
-        updateKeywordTags();
-        window.filterArticles();
-    };
-
-    // 4. 필터링 함수
-    window.filterArticles = function() {
-        const selectedCompanies = Array.from(window.selectedCompanyList);
-        const selectedKeywords = Array.from(window.selectedKeywordList);
-        const filteredContainer = document.getElementById('filteredArticles');
-        
-        if (!filteredContainer) return;
-        
-        filteredContainer.innerHTML = '';
-        
-        if (selectedKeywords.length > 0 && selectedCompanies.length === 0) {
-            filteredContainer.innerHTML = '<p class="text-gray-500 text-center py-4">언론사를 먼저 선택해주세요.</p>';
-            const countElement = document.getElementById('filteredCount');
-            if (countElement) countElement.textContent = '';
-            return;
-        }
-        
-        if (selectedCompanies.length === 0 && selectedKeywords.length === 0) {
-            filteredContainer.innerHTML = '<p class="text-gray-500 text-center py-4">언론사와 키워드를 선택해주세요.</p>';
-            const countElement = document.getElementById('filteredCount');
-            if (countElement) countElement.textContent = '';
-            return;
-        }
-
-        const companyContainers = document.querySelectorAll('div[data-company]');
-        let totalArticles = 0;
-        
-        companyContainers.forEach(container => {
-            const company = container.dataset.company;
-            if (selectedCompanies.includes(company)) {
-                const articles = container.querySelectorAll('.article-item');
-                articles.forEach(article => {
-                    const articleTitle = article.textContent.toLowerCase();
-                    const matchesKeywords = selectedKeywords.length === 0 || 
-                        selectedKeywords.some(keyword => articleTitle.includes(keyword.toLowerCase()));
+    const companyContainers = document.querySelectorAll('div[data-company]');
+    let totalArticles = 0;
+    
+    companyContainers.forEach(container => {
+        const company = container.dataset.company;
+        if (selectedCompanies.includes(company)) {
+            const articles = container.querySelectorAll('.article-item');
+            articles.forEach(article => {
+                const articleTitle = article.textContent.toLowerCase();
+                const matchesKeywords = selectedKeywords.length === 0 || 
+                    selectedKeywords.some(keyword => articleTitle.includes(keyword.toLowerCase()));
+                
+                if (matchesKeywords) {
+                    const clonedArticle = article.cloneNode(true);
+                    const articleWrapper = document.createElement('div');
+                    articleWrapper.className = 'flex items-center gap-2 mb-2';
                     
-                    if (matchesKeywords) {
-                        const clonedArticle = article.cloneNode(true);
-                        const articleWrapper = document.createElement('div');
-                        articleWrapper.className = 'flex items-center gap-2 mb-2';
-                        
-                        const companyName = document.createElement('span');
-                        companyName.className = 'text-sm font-bold text-blue-600';
-                        companyName.textContent = company;
-                        
-                        articleWrapper.appendChild(companyName);
-                        articleWrapper.appendChild(clonedArticle);
-                        filteredContainer.appendChild(articleWrapper);
-                        totalArticles++;
-                    }
-                });
-            }
-        });
-        
-        document.getElementById('filteredCount').textContent = `(${totalArticles}건)`;
-    };
-
-    // 5. 이벤트 핸들러 함수들
-    function handleCompanyChange(e) {
-        const option = e.target.options[e.target.selectedIndex];
-        if (option.value === "") return;
-        
-        if (window.selectedCompanyList.size >= 3 && !window.selectedCompanyList.has(option.value)) {
-            alert('최대 3개의 언론사만 선택할 수 있습니다.');
-            option.selected = false;
-            return;
-        }
-        
-        if (option.selected) {
-            window.selectedCompanyList.add(option.value);
-        } else {
-            window.selectedCompanyList.delete(option.value);
-        }
-        
-        updateTags();
-        window.filterArticles();
-    }
-
-    function handleKeywordChange(e) {
-        const option = e.target.options[e.target.selectedIndex];
-        if (option.value === "") return;
-        
-        if (window.selectedKeywordList.size >= 5 && !window.selectedKeywordList.has(option.value)) {
-            alert('최대 5개의 키워드만 선택할 수 있습니다.');
-            option.selected = false;
-            return;
-        }
-        
-        if (option.selected) {
-            window.selectedKeywordList.add(option.value);
-        } else {
-            window.selectedKeywordList.delete(option.value);
-        }
-        
-        updateKeywordTags();
-        window.filterArticles();
-    }
-
-    // 분석 결과 업데이트 함수 
-    function updateAnalysisResults(data) {
-        // 디버깅
-        console.log('Received data:', data);
-
-        if (!data?.analysis) {
-            console.error('Invalid analysis data:', data);
-            return;
-        }
-
-        // 1. 통계 업데이트만 유지
-        const totalArticles = document.getElementById('totalArticles');
-        const totalPress = document.getElementById('totalPress');
-        const totalKeywords = document.getElementById('totalKeywords');
-        
-        if (totalArticles) totalArticles.textContent = data.analysis.filtered_count ?? '0';
-        if (totalPress) totalPress.textContent = window.selectedCompanyList.size;
-        if (totalKeywords) totalKeywords.textContent = window.selectedKeywordList.size;
-
-        // 2. GPT 분석 결과 업데이트
-        const updateSection = (elementId, content) => {
-            const element = document.getElementById(elementId);
-            if (element && content) {
-                element.textContent = content;
-                element.style.whiteSpace = 'pre-line';
-            }
-        };
-
-        if (data.analysis.llm_analysis) {
-            updateSection('trendAnalysis', data.analysis.llm_analysis.trends);
-            updateSection('relationAnalysis', data.analysis.llm_analysis.relations);
-            updateSection('insightAnalysis', data.analysis.llm_analysis.insights);
-        }
-
-        // 3. 결과 영역 표시
-        const results = document.getElementById('analysisResults');
-        if (results) {
-            results.classList.remove('hidden');
-            results.style.display = 'block';
-        }
-    }
-
-    // 6. 슬라이더 관리자 객체
-    const SliderManager = {
-        sliders: {},
-        shownTitles: new Set(),
-        currentSliderIndex: 1,
-
-        initialize() {
-            const keywordRankings = Array.from(document.querySelectorAll('[id^="keywordSlider"]'))
-                .sort((a, b) => {
-                    const rankA = parseInt(a.id.replace('keywordSlider', ''));
-                    const rankB = parseInt(b.id.replace('keywordSlider', ''));
-                    return rankA - rankB;
-                });
-
-            this.initializeSliders(keywordRankings);
-            
-            if (Object.keys(this.sliders).length > 0) {
-                setInterval(() => this.rotateSliders(), 5000);
-            }
-        },
-
-        initializeSliders(keywordRankings) {
-            keywordRankings.forEach((slider, index) => {
-                const rank = index + 1;
-                if (!slider || slider.children.length <= 1) return;
-
-                const validSlides = Array.from(slider.children).filter(slide => {
-                    const title = slide.textContent.trim();
-                    if (this.shownTitles.has(title)) return false;
-                    this.shownTitles.add(title);
-                    return true;
-                });
-
-                if (validSlides.length > 0) {
-                    slider.innerHTML = '';
-                    validSlides.forEach(slide => slider.appendChild(slide));
+                    const companyName = document.createElement('span');
+                    companyName.className = 'text-sm font-bold text-blue-600';
+                    companyName.textContent = company;
                     
-                    this.sliders[rank] = {
-                        element: slider,
-                        currentPosition: 0,
-                        maxPosition: validSlides.length - 1
-                    };
+                    articleWrapper.appendChild(companyName);
+                    articleWrapper.appendChild(clonedArticle);
+                    filteredContainer.appendChild(articleWrapper);
+                    totalArticles++;
                 }
             });
-        },
+        }
+    });
+    
+    document.getElementById('filteredCount').textContent = `(${totalArticles}건)`;
+};
 
-        rotateSliders() {
-            if (this.sliders[this.currentSliderIndex]) {
-                this.sliders[this.currentSliderIndex].element.style.transform = 'translateY(0)';
-                this.sliders[this.currentSliderIndex].currentPosition = 0;
-            }
+// 5. 이벤트 핸들러 함수들
+function handleCompanyChange(e) {
+    const option = e.target.options[e.target.selectedIndex];
+    if (option.value === "") return;
+    
+    if (window.selectedCompanyList.size >= 3 && !window.selectedCompanyList.has(option.value)) {
+        alert('최대 3개의 언론사만 선택할 수 있습니다.');
+        option.selected = false;
+        return;
+    }
+    
+    if (option.selected) {
+        window.selectedCompanyList.add(option.value);
+    } else {
+        window.selectedCompanyList.delete(option.value);
+    }
+    
+    updateTags();
+    window.filterArticles();
+}
 
-            if (this.currentSliderIndex >= Object.keys(this.sliders).length) {
-                this.shownTitles.clear();
-                this.currentSliderIndex = 0;
-            }
+function handleKeywordChange(e) {
+    const option = e.target.options[e.target.selectedIndex];
+    if (option.value === "") return;
+    
+    if (window.selectedKeywordList.size >= 5 && !window.selectedKeywordList.has(option.value)) {
+        alert('최대 5개의 키워드만 선택할 수 있습니다.');
+        option.selected = false;
+        return;
+    }
+    
+    if (option.selected) {
+        window.selectedKeywordList.add(option.value);
+    } else {
+        window.selectedKeywordList.delete(option.value);
+    }
+    
+    updateKeywordTags();
+    window.filterArticles();
+}
 
-            this.currentSliderIndex++;
+// 분석 결과 업데이트 함수 
+function updateAnalysisResults(data) {
+    // 디버깅
+    console.log('Received data:', data);
 
-            if (this.sliders[this.currentSliderIndex] && this.sliders[this.currentSliderIndex].maxPosition > 0) {
-                const slider = this.sliders[this.currentSliderIndex];
-                slider.currentPosition = (slider.currentPosition + 1) % (slider.maxPosition + 1);
-                slider.element.style.transform = `translateY(-${slider.currentPosition * 24}px)`;
-            }
+    if (!data?.analysis) {
+        console.error('Invalid analysis data:', data);
+        return;
+    }
+
+    // 1. 통계 업데이트만 유지
+    const totalArticles = document.getElementById('totalArticles');
+    const totalPress = document.getElementById('totalPress');
+    const totalKeywords = document.getElementById('totalKeywords');
+    
+    if (totalArticles) totalArticles.textContent = data.analysis.filtered_count ?? '0';
+    if (totalPress) totalPress.textContent = window.selectedCompanyList.size;
+    if (totalKeywords) totalKeywords.textContent = window.selectedKeywordList.size;
+
+    // 2. GPT 분석 결과 업데이트
+    const updateSection = (elementId, content) => {
+        const element = document.getElementById(elementId);
+        if (element && content) {
+            element.textContent = content;
+            element.style.whiteSpace = 'pre-line';
         }
     };
 
-    </script>
-    {% endblock extra_js %}
+    if (data.analysis.llm_analysis) {
+        updateSection('trendAnalysis', data.analysis.llm_analysis.trends);
+        updateSection('relationAnalysis', data.analysis.llm_analysis.relations);
+        updateSection('insightAnalysis', data.analysis.llm_analysis.insights);
+    }
+
+    // 3. 결과 영역 표시
+    const results = document.getElementById('analysisResults');
+    if (results) {
+        results.classList.remove('hidden');
+        results.style.display = 'block';
+    }
+}
+
+// 6. 슬라이더 관리자 객체 - 여러 키워드 슬라이더를 통합 관리하는 객체
+const SliderManager = {
+    // 초기화된 슬라이더들을 저장하는 객체
+    sliders: {},
+    // 중복된 제목을 필터링하기 위한 Set
+    shownTitles: new Set(),
+    // 현재 활성화된 슬라이더의 인덱스
+    currentSliderIndex: 1,
+
+    // 슬라이더 초기화 메서드
+    initialize() {
+        // 모든 키워드 슬라이더 요소를 찾아서 순서대로 정렬
+        const keywordRankings = Array.from(document.querySelectorAll('[id^="keywordSlider"]'))
+            .sort((a, b) => {
+                // 슬라이더 ID의 숫자를 기준으로 정렬 (예: keywordSlider1, keywordSlider2, ...)
+                const rankA = parseInt(a.id.replace('keywordSlider', ''));
+                const rankB = parseInt(b.id.replace('keywordSlider', ''));
+                return rankA - rankB;
+            });
+
+        // 정렬된 슬라이더들을 초기화
+        this.initializeSliders(keywordRankings);
+        
+        // 초기화된 슬라이더가 있으면 5초마다 로테이션 시작
+        if (Object.keys(this.sliders).length > 0) {
+            setInterval(() => this.rotateSliders(), 5000);
+        }
+    },
+
+    // 개별 슬라이더 초기화 메서드
+    initializeSliders(keywordRankings) {
+        keywordRankings.forEach((slider, index) => {
+            const rank = index + 1;
+            // 슬라이더가 없거나 항목이 1개 이하면 초기화하지 않음
+            if (!slider || slider.children.length <= 1) return;
+
+            // 중복된 제목을 가진 슬라이드 필터링
+            const validSlides = Array.from(slider.children).filter(slide => {
+                const title = slide.textContent.trim();
+                if (this.shownTitles.has(title)) return false;
+                this.shownTitles.add(title);
+                return true;
+            });
+
+            // 유효한 슬라이드가 있으면 슬라이더 객체 생성
+            if (validSlides.length > 0) {
+                slider.innerHTML = '';
+                validSlides.forEach(slide => slider.appendChild(slide));
+                
+                // 슬라이더 상태 정보 저장
+                this.sliders[rank] = {
+                    element: slider,
+                    currentPosition: 0,
+                    maxPosition: validSlides.length - 1
+                };
+            }
+        });
+    },
+
+    // 슬라이더 로테이션 메서드
+    rotateSliders() {
+        // 현재 슬라이더를 초기 위치로 되돌림
+        if (this.sliders[this.currentSliderIndex]) {
+            this.sliders[this.currentSliderIndex].element.style.transform = 'translateY(0)';
+            this.sliders[this.currentSliderIndex].currentPosition = 0;
+        }
+
+        // 모든 슬라이더를 순회했으면 초기화
+        if (this.currentSliderIndex >= Object.keys(this.sliders).length) {
+            this.shownTitles.clear();
+            this.currentSliderIndex = 0;
+        }
+
+        // 다음 슬라이더로 이동
+        this.currentSliderIndex++;
+
+        // 현재 슬라이더가 있고 여러 항목이 있으면 애니메이션 실행
+        if (this.sliders[this.currentSliderIndex] && this.sliders[this.currentSliderIndex].maxPosition > 0) {
+            const slider = this.sliders[this.currentSliderIndex];
+            slider.currentPosition = (slider.currentPosition + 1) % (slider.maxPosition + 1);
+            slider.element.style.transform = `translateY(-${slider.currentPosition * 24}px)`;
+        }
+    }
+};
+
+</script>
+{% endblock extra_js %}

@@ -117,6 +117,42 @@ class NaverNewsCrawler:
                 continue
         
         return pd.DataFrame(all_news)
+    
+    def crawl_content(self, url):
+        driver = None
+        try:
+            driver = self.setup_driver()
+            driver.get(url)
+            time.sleep(2)  # 페이지 로딩 대기
+            
+            # 페이지 로딩 대기
+            wait = WebDriverWait(driver, 10)
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#dic_area')))
+            
+            # HTML 파싱
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            
+            # 기사 본문 찾기 (네이버 뉴스 본문 영역의 ID: dic_area)
+            content_element = soup.select_one('#dic_area')
+            if content_element:
+                # 불필요한 요소 제거
+                for tag in content_element.select('script, style, iframe'):
+                    tag.decompose()
+                    
+                # 본문 텍스트 추출 및 정제
+                content = content_element.get_text(strip=True)
+                content = ' '.join(line.strip() for line in content.split('\n') if line.strip())
+                return content
+                
+            return "기사 내용을 찾을 수 없습니다."
+            
+        except Exception as e:
+            logger.error(f"기사 내용 크롤링 중 오류 발생: {str(e)}")
+            return f"기사 내용을 가져오는 중 오류가 발생했습니다: {str(e)}"
+            
+        finally:
+            if driver:
+                driver.quit()
 
 if __name__ == "__main__":
     crawler = NaverNewsCrawler()

@@ -117,7 +117,7 @@ if not os.path.exists(os.path.join(BASE_DIR, 'logs')):
 
 # API 타임아웃 설정
 API_TIMEOUT = 30  # API 호출 타임아웃 (초)
-CACHE_TIMEOUT = 900  # 캐시 타임아웃 (15분)
+CACHE_TIMEOUT = 1800  # 캐시 타임아웃 (30분)
 
 # 캐시 설정 수정
 CACHES = {
