@@ -38,7 +38,7 @@ def atomic_cache(func):
 def news_list(request):
     print("=== 뉴스 목록 조회 시작 ===")  # 일단 print로 확인
     # 캐시 타임아웃을 settings에서 가져오기
-    CACHE_TIMEOUT = getattr(settings, 'CACHE_TIMEOUT', 900)  # 기본값 15분
+    CACHE_TIMEOUT = getattr(settings, 'CACHE_TIMEOUT', 1800)  # 기본값 30분
     
     # 캐시된 데이터 확인 시 타임아웃도 함께 체크
     cached_data = cache.get('news_data')
@@ -398,16 +398,17 @@ def article_summary(request):
     print("\n=== article_summary 디버깅 ===")
     
     # 1. 캐시 데이터 확인
-    news_items = cache.get('news_rankings', [])
+    cached_data = cache.get('news_data', {})
+    news_items = cached_data.get('news_items', [])
+    keyword_rankings = cached_data.get('keyword_rankings', [])  # 이미 추출된 키워드 사용
+    
     print(f"1. 캐시된 뉴스 개수: {len(news_items)}")
     
     if not news_items:
         print("캐시된 뉴스가 없습니다!")
         return redirect('news:news_list')
     
-    # 2. 키워드 추출 확인
-    all_titles = [item['title'] for item in news_items]
-    keyword_rankings = extract_keywords(all_titles)
+    # 2. 이미 랭킹된 키워드 사용
     print(f"2. 추출된 키워드 수: {len(keyword_rankings)}")
     print(f"상위 5개 키워드: {keyword_rankings[:5]}")
     
