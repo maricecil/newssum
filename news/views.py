@@ -21,6 +21,8 @@ from asgiref.sync import sync_to_async, async_to_sync
 from .agents.crew import NewsAnalysisCrew, summarize_article
 from langchain_community.llms import OpenAI
 from crewai.crew import Crew
+from langchain_community.chat_models import ChatOpenAI
+from langchain.schema import SystemMessage, HumanMessage
 
 logger = logging.getLogger('news')  # Django 설정의 'news' 로거 사용
 
@@ -366,51 +368,63 @@ def analyze_trends(request):
         # 상세 분석 요청시 CrewAI 분석 추가
         if analysis_type == 'detailed':
             try:
-                crew = NewsAnalysisCrew()
+                # CrewAI 대신 GPT로 종합 분석
+                summaries_text = "\n\n".join([
+                    f"제목: {article['title']}\n"
+                    f"언론사: {article['company_name']}\n"
+                    f"요약: {article['summary']}"
+                    for article in filtered_items
+                ])
                 
-                # press_stats 데이터 준비
-                press_stats = {
-                    'total_articles': len(filtered_items),
-                    'companies': list(set(article['company_name'] for article in filtered_items)),
-                    'keywords': [keyword for keyword, _, _ in keyword_rankings]
-                }
-                
-                # 비동기 함수를 동기적으로 실행하면서 press_stats 전달
-                results = async_to_sync(crew.run_analysis)(
-                    news_data=filtered_items,
-                    press_stats=press_stats
+                llm = ChatOpenAI(
+                    model_name="gpt-4",
+                    temperature=0.3,
+                    max_tokens=2000
                 )
                 
-                # 디버깅을 위한 로그 추가
-                print("\n=== 분석 결과 디버깅 ===")
-                print(f"결과 타입: {type(results)}")
-                print(f"결과 내용: {results}")
-                print("======================\n")
+                system_prompt = """
+                여러 언론사의 기사를 비교 분석하여 다음과 같이 정리해주세요:
+
+                보도 관점 분석
+                - [언론사명] 구체적 보도 프레임과 사용된 표현 분석
+                - 예시) "조선일보는 'A정책 실패' 강조, 한겨레는 'B정책 성과' 부각"
+
+                주요 쟁점 분석
+                - 언론사별 대립되는 시각과 근거
+                - 예시) "동아일보와 경향신문은 [특정 사안]에 대해 상반된 입장"
+
+                종합 분석
+                - 전체 보도 경향의 특징
+                - 각 언론사의 관점 차이가 두드러진 부분
+                - 독자들이 균형있게 볼 수 있는 관점 제시
+
+                ※ 언론사 이름을 구체적으로 명시하고, 실제 사용된 표현을 인용하여 분석해주세요.
+                ※ 중립적이고 객관적인 톤으로 작성해주세요.
+                """
                 
-                # 결과 처리 부분
-                if results and results.get('success'):
-                    analysis_results = {
-                        'classification': str(results.get('classification', '분류 결과 없음')),
-                        'comparison': str(results.get('comparison', '비교 분석 결과 없음')),
-                        'summary': str(results.get('summary', '요약 결과 없음'))
-                    }
-                    logger.info(f"분석 결과: {analysis_results}")
-                else:
-                    logger.error(f"분석 실패. 전체 결과: {results}")  # 실패 시 전체 결과 로깅
-                    analysis_results = {
-                        'classification': '분석 실패',
-                        'comparison': '분석 실패',
-                        'summary': '분석 실패'
-                    }
+                messages = [
+                    SystemMessage(content=system_prompt),
+                    HumanMessage(content=summaries_text)
+                ]
+                
+                response = llm.generate([messages])
+                result = response.generations[0][0].text
+                parts = result.split('\n\n', 2)
+                
+                analysis_results = {
+                    'classification': parts[0] if len(parts) > 0 else '분류 결과 없음',
+                    'comparison': parts[1] if len(parts) > 1 else '비교 분석 결과 없음',
+                    'summary': parts[2] if len(parts) > 2 else '요약 결과 없음'
+                }
                 
                 analysis_results['press_distribution'] = press_distribution
                 analysis_results['filtered_count'] = len(filtered_items)
                 analysis_results['keyword_rankings'] = keyword_rankings
                 basic_analysis['crew_analysis'] = analysis_results
-                logger.info("CrewAI 분석 완료")
-            except Exception as crew_error:
-                logger.error(f"CrewAI 분석 중 오류 발생: {str(crew_error)}")
-                basic_analysis['crew_analysis_error'] = "상세 분석 중 오류가 발생했습니다."
+                logger.info("GPT 분석 완료")
+            except Exception as gpt_error:
+                logger.error(f"GPT 분석 중 오류 발생: {str(gpt_error)}")
+                basic_analysis['gpt_analysis_error'] = "종합 분석 중 오류가 발생했습니다."
         
         # 분석 결과 캐싱 (30분)
         cache_key = f"analysis_{analysis_type}_{'-'.join(selected_companies)}_{'-'.join(selected_keywords)}"
@@ -445,14 +459,14 @@ def article_summary(request):
     
     # 2. 이미 랭킹된 키워드 사용
     print(f"2. 추출된 키워드 수: {len(keyword_rankings)}")
-    top_keyword = keyword_rankings[0] if keyword_rankings else None
-    print(f"1위 키워드: {top_keyword}")
+    top_keywords = keyword_rankings[:3] if keyword_rankings else []
+    print(f"3개 키워드: {top_keywords}")
     
     # 3. 기사 그룹화 및 요약
     keyword_articles = {}
-    if top_keyword:
-        keyword, article_count, articles = top_keyword
-        print(f"1위 키워드 '{keyword}'의 기사 수: {article_count}")
+    for keyword_data in top_keywords:
+        keyword, article_count, _ = keyword_data  # 사용하지 않는 articles는 _로 표시
+        print(f"키워드 '{keyword}'의 기사 수: {article_count}")
         
         related_articles = []
         for item in news_items:
@@ -484,42 +498,54 @@ def article_summary(request):
             
             # CrewAI 분석 실행 - 중복 분석 제거
             try:
-                crew = NewsAnalysisCrew()
+                # CrewAI 대신 GPT로 종합 분석
+                summaries_text = "\n\n".join([
+                    f"제목: {article['title']}\n"
+                    f"언론사: {article['source']}\n"
+                    f"요약: {article['summary']}"
+                    for article in related_articles
+                ])
                 
-                # press_stats 데이터 준비 (press_distribution 제거)
-                press_stats = {
-                    'total_articles': len(related_articles),
-                    'companies': list(set(article['source'] for article in related_articles)),
-                    'keywords': [keyword]
-                }
-                
-                # 비동기 함수를 동기적으로 실행
-                results = async_to_sync(crew.run_analysis)(
-                    news_data=related_articles,
-                    press_stats=press_stats
+                llm = ChatOpenAI(
+                    model_name="gpt-4",
+                    temperature=0.3,
+                    max_tokens=2000
                 )
                 
-                # 디버깅을 위한 로그 추가
-                print("\n=== 분석 결과 디버깅 ===")
-                print(f"결과 타입: {type(results)}")
-                print(f"결과 내용: {results}")
-                print("======================\n")
+                system_prompt = """
+                여러 언론사의 기사를 비교 분석하여 다음과 같이 정리해주세요:
+
+                보도 관점 분석
+                - [언론사명] 구체적 보도 프레임과 사용된 표현 분석
+                - 예시) "조선일보는 'A정책 실패' 강조, 한겨레는 'B정책 성과' 부각"
+
+                주요 쟁점 분석
+                - 언론사별 대립되는 시각과 근거
+                - 예시) "동아일보와 경향신문은 [특정 사안]에 대해 상반된 입장"
+
+                종합 분석
+                - 전체 보도 경향의 특징
+                - 각 언론사의 관점 차이가 두드러진 부분
+                - 독자들이 균형있게 볼 수 있는 관점 제시
+
+                ※ 언론사 이름을 구체적으로 명시하고, 실제 사용된 표현을 인용하여 분석해주세요.
+                ※ 중립적이고 객관적인 톤으로 작성해주세요.
+                """
                 
-                # 결과 처리 부분
-                if results and results.get('success'):
-                    analysis_results = {
-                        'classification': str(results.get('classification', '분류 결과 없음')),
-                        'comparison': str(results.get('comparison', '비교 분석 결과 없음')),
-                        'summary': str(results.get('summary', '요약 결과 없음'))
-                    }
-                    logger.info(f"분석 결과: {analysis_results}")
-                else:
-                    logger.error(f"분석 실패. 전체 결과: {results}")  # 실패 시 전체 결과 로깅
-                    analysis_results = {
-                        'classification': '분석 실패',
-                        'comparison': '분석 실패',
-                        'summary': '분석 실패'
-                    }
+                messages = [
+                    SystemMessage(content=system_prompt),
+                    HumanMessage(content=summaries_text)
+                ]
+                
+                response = llm.generate([messages])
+                result = response.generations[0][0].text
+                parts = result.split('\n\n', 2)
+                
+                analysis_results = {
+                    'classification': parts[0] if len(parts) > 0 else '분류 결과 없음',
+                    'comparison': parts[1] if len(parts) > 1 else '비교 분석 결과 없음',
+                    'summary': parts[2] if len(parts) > 2 else '요약 결과 없음'
+                }
                 
                 # press_stats에서 직접 가져오는 대신 results에서 가져오기
                 keyword_articles[keyword] = {
@@ -529,7 +555,7 @@ def article_summary(request):
                 }
                 
             except Exception as e:
-                logger.error(f"CrewAI 분석 중 오류 발생: {str(e)}")
+                logger.error(f"GPT 분석 중 오류 발생: {str(e)}")
                 keyword_articles[keyword] = {
                     'articles': related_articles,
                     'count': article_count,

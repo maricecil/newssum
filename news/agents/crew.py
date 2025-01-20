@@ -224,62 +224,57 @@ class NewsAnalysisCrew:
                     'timestamp': datetime.now().isoformat()
                 }
             
-            # Agent 생성 및 Task 설정
-            agents_info = self.create_agents(press_stats)
-            agents = agents_info['agents']
+            # CrewAI 대신 직접 GPT 분석 사용
+            article_list = "\n".join([
+                f"제목: {article['title']}\n"
+                f"언론사: {article.get('company_name', '알 수 없음')}\n"
+                f"요약: {article.get('summary', '요약 없음')}\n"
+                for article in news_data
+            ])
             
-            tasks = [
-                self.create_task(agents[0], news_data, task_type='classification'),
-                self.create_task(agents[1], news_data, task_type='comparison'),
-                self.create_task(agents[2], news_data, task_type='summary')
+            system_prompt = """
+            여러 언론사의 요약된 기사들을 분석하여 차이점을 중심으로 다음 형식으로 정리해주세요:
+
+            1. 보도 관점 분류:
+            - 각 언론사의 보도 프레임과 논조
+            - 주요 논조와 특징
+            - 대표적인 보도 사례
+
+            2. 주요 쟁점 분석:
+            - 핵심 쟁점 요약
+            - 언론사간 입장 차이
+            - 주목할만한 표현과 보도 방식
+
+            3. 종합 분석:
+            - 전체 보도 경향 요약
+            - 주목할만한 특징
+            - 시사점
+
+            ※ 각 섹션은 번호를 붙이고, 각 항목은 '-' 기호로 시작하여 간단명료하게 작성해주세요.
+            ※ 각 섹션 사이는 빈 줄로 구분해주세요.
+            ※ "1. 보도 관점 분류:"와 같은 숫자와 제목은 표시하지 말아주세요.
+            """
+            
+            messages = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=article_list)
             ]
             
-            crew = Crew(
-                agents=agents,
-                tasks=tasks,
-                verbose=True,
-                max_iterations=3
-            )
+            response = self.llm.generate([messages])
+            result = response.generations[0][0].text
+            parts = result.split('\n\n', 2)
             
-            try:
-                result = crew.kickoff()
-                logger.info("Crew 분석 완료")
-                logger.info(f"Raw result: {result}")  # 원본 결과 로깅
-                
-                # 결과 처리 수정
-                if isinstance(result, list):
-                    return {
-                        'success': True,
-                        'classification': str(result[0]),
-                        'comparison': str(result[1]),
-                        'summary': str(result[2]),
-                        'analyzed_articles': len(news_data),
-                        'timestamp': datetime.now().isoformat()
-                    }
-                elif isinstance(result, dict):
-                    return {
-                        'success': True,
-                        'classification': str(result.get('classification', '')),
-                        'comparison': str(result.get('comparison', '')),
-                        'summary': str(result.get('summary', '')),
-                        'analyzed_articles': len(news_data),
-                        'timestamp': datetime.now().isoformat()
-                    }
-                else:
-                    logger.error(f"예상치 못한 결과 형식: {type(result)}")
-                    return {
-                        'success': False,
-                        'error': '분석 결과 형식 오류',
-                        'analyzed_articles': len(news_data),
-                        'timestamp': datetime.now().isoformat()
-                    }
-                
-            except Exception as e:
-                logger.error(f"Crew 실행 중 오류: {str(e)}")
-                raise
-                
+            return {
+                'success': True,
+                'classification': parts[0] if len(parts) > 0 else '분류 결과 없음',
+                'comparison': parts[1] if len(parts) > 1 else '비교 분석 결과 없음',
+                'summary': parts[2] if len(parts) > 2 else '요약 결과 없음',
+                'analyzed_articles': len(news_data),
+                'timestamp': datetime.now().isoformat()
+            }
+            
         except Exception as e:
-            logger.error(f"CrewAI 분석 중 오류 발생: {str(e)}")
+            logger.error(f"뉴스 분석 중 오류 발생: {str(e)}")
             return {
                 'success': False,
                 'error': '분석 중 오류가 발생했습니다.',
