@@ -131,3 +131,10 @@ CACHES = {
         }
     }
 }
+
+# API 타임아웃 설정
+API_TIMEOUT = 30  # 초 단위
+
+# 연결 재시도 설정
+MAX_RETRIES = 3
+RETRY_BACKOFF = 1  # 초 단위
