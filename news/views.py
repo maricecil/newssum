@@ -17,9 +17,10 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 import json
 from openai import OpenAI
-from asgiref.sync import sync_to_async
+from asgiref.sync import sync_to_async, async_to_sync
 from .agents.crew import NewsAnalysisCrew, summarize_article
 from langchain_community.llms import OpenAI
+from crewai.crew import Crew
 
 logger = logging.getLogger('news')  # Django 설정의 'news' 로거 사용
 
@@ -91,13 +92,14 @@ def news_list(request):
         titles=news_items  # 전체 기사 데이터 전달
     )
     
-    # news_by_company 딕셔너리 생성 추가
+    # news_by_company 딕셔너리 생성 수정
     news_by_company = {}
     for item in news_items:
-        company = item['company_name']
-        if company not in news_by_company:
-            news_by_company[company] = []
-        news_by_company[company].append(item)
+        company = item.get('company_name', '')  # get 메서드로 안전하게 접근
+        if company:  # company가 존재할 때만 처리
+            if company not in news_by_company:
+                news_by_company[company] = []
+            news_by_company[company].append(item)
     
     context = {
         'news_items': news_items,
@@ -365,13 +367,46 @@ def analyze_trends(request):
         if analysis_type == 'detailed':
             try:
                 crew = NewsAnalysisCrew()
-                crew_analysis = crew.run_analysis(filtered_items)
-                # CrewOutput을 dictionary로 변환
-                basic_analysis['crew_analysis'] = {
-                    'summary': str(crew_analysis.summary),  # 문자열로 변환
-                    'analyzed_articles': crew_analysis.analyzed_articles,
-                    'timestamp': crew_analysis.timestamp.isoformat()  # ISO 형식 문자열로 변환
+                
+                # press_stats 데이터 준비
+                press_stats = {
+                    'total_articles': len(filtered_items),
+                    'companies': list(set(article['company_name'] for article in filtered_items)),
+                    'keywords': [keyword for keyword, _, _ in keyword_rankings]
                 }
+                
+                # 비동기 함수를 동기적으로 실행하면서 press_stats 전달
+                results = async_to_sync(crew.run_analysis)(
+                    news_data=filtered_items,
+                    press_stats=press_stats
+                )
+                
+                # 디버깅을 위한 로그 추가
+                print("\n=== 분석 결과 디버깅 ===")
+                print(f"결과 타입: {type(results)}")
+                print(f"결과 내용: {results}")
+                print("======================\n")
+                
+                # 결과 처리 부분
+                if results and results.get('success'):
+                    analysis_results = {
+                        'classification': str(results.get('classification', '분류 결과 없음')),
+                        'comparison': str(results.get('comparison', '비교 분석 결과 없음')),
+                        'summary': str(results.get('summary', '요약 결과 없음'))
+                    }
+                    logger.info(f"분석 결과: {analysis_results}")
+                else:
+                    logger.error(f"분석 실패. 전체 결과: {results}")  # 실패 시 전체 결과 로깅
+                    analysis_results = {
+                        'classification': '분석 실패',
+                        'comparison': '분석 실패',
+                        'summary': '분석 실패'
+                    }
+                
+                analysis_results['press_distribution'] = press_distribution
+                analysis_results['filtered_count'] = len(filtered_items)
+                analysis_results['keyword_rankings'] = keyword_rankings
+                basic_analysis['crew_analysis'] = analysis_results
                 logger.info("CrewAI 분석 완료")
             except Exception as crew_error:
                 logger.error(f"CrewAI 분석 중 오류 발생: {str(crew_error)}")
@@ -400,7 +435,7 @@ def article_summary(request):
     # 1. 캐시 데이터 확인
     cached_data = cache.get('news_data', {})
     news_items = cached_data.get('news_items', [])
-    keyword_rankings = cached_data.get('keyword_rankings', [])  # 이미 추출된 키워드 사용
+    keyword_rankings = cached_data.get('keyword_rankings', [])
     
     print(f"1. 캐시된 뉴스 개수: {len(news_items)}")
     
@@ -410,11 +445,15 @@ def article_summary(request):
     
     # 2. 이미 랭킹된 키워드 사용
     print(f"2. 추출된 키워드 수: {len(keyword_rankings)}")
-    print(f"상위 5개 키워드: {keyword_rankings[:5]}")
+    top_keyword = keyword_rankings[0] if keyword_rankings else None
+    print(f"1위 키워드: {top_keyword}")
     
     # 3. 기사 그룹화 및 요약
     keyword_articles = {}
-    for keyword, count, _ in keyword_rankings[:5]:
+    if top_keyword:
+        keyword, article_count, articles = top_keyword
+        print(f"1위 키워드 '{keyword}'의 기사 수: {article_count}")
+        
         related_articles = []
         for item in news_items:
             if keyword in item['title']:
@@ -424,33 +463,89 @@ def article_summary(request):
                 
                 if not summary:
                     try:
-                        # 요약이 없으면 새로 생성
                         summary = summarize_article(item['url'])
-                        # 요약 결과 캐시에 저장 (1시간)
                         cache.set(cache_key, summary, 3600)
                     except Exception as e:
-                        print(f"요약 생성 실패: {str(e)}")
+                        logger.error(f"요약 생성 실패: {str(e)}")
                         summary = "요약을 생성할 수 없습니다."
                 
                 article_data = {
                     'title': item['title'],
                     'source': item['company_name'],
                     'url': item['url'],
-                    'published_at': datetime.now(),
-                    'summary': summary
+                    'summary': summary,
+                    'rank': item.get('rank', 0)
                 }
                 related_articles.append(article_data)
-                
+        
         if related_articles:
-            keyword_articles[keyword] = related_articles
-            print(f"3. 키워드 '{keyword}'에 대한 기사 수: {len(related_articles)}")
+            # 순위순으로 정렬
+            related_articles.sort(key=lambda x: x['rank'])
+            
+            # CrewAI 분석 실행 - 중복 분석 제거
+            try:
+                crew = NewsAnalysisCrew()
+                
+                # press_stats 데이터 준비 (press_distribution 제거)
+                press_stats = {
+                    'total_articles': len(related_articles),
+                    'companies': list(set(article['source'] for article in related_articles)),
+                    'keywords': [keyword]
+                }
+                
+                # 비동기 함수를 동기적으로 실행
+                results = async_to_sync(crew.run_analysis)(
+                    news_data=related_articles,
+                    press_stats=press_stats
+                )
+                
+                # 디버깅을 위한 로그 추가
+                print("\n=== 분석 결과 디버깅 ===")
+                print(f"결과 타입: {type(results)}")
+                print(f"결과 내용: {results}")
+                print("======================\n")
+                
+                # 결과 처리 부분
+                if results and results.get('success'):
+                    analysis_results = {
+                        'classification': str(results.get('classification', '분류 결과 없음')),
+                        'comparison': str(results.get('comparison', '비교 분석 결과 없음')),
+                        'summary': str(results.get('summary', '요약 결과 없음'))
+                    }
+                    logger.info(f"분석 결과: {analysis_results}")
+                else:
+                    logger.error(f"분석 실패. 전체 결과: {results}")  # 실패 시 전체 결과 로깅
+                    analysis_results = {
+                        'classification': '분석 실패',
+                        'comparison': '분석 실패',
+                        'summary': '분석 실패'
+                    }
+                
+                # press_stats에서 직접 가져오는 대신 results에서 가져오기
+                keyword_articles[keyword] = {
+                    'articles': related_articles,
+                    'count': article_count,
+                    'analysis': analysis_results
+                }
+                
+            except Exception as e:
+                logger.error(f"CrewAI 분석 중 오류 발생: {str(e)}")
+                keyword_articles[keyword] = {
+                    'articles': related_articles,
+                    'count': article_count,
+                    'analysis': {
+                        'classification': '분석 중 오류 발생',
+                        'comparison': '분석 중 오류 발생',
+                        'summary': '분석 중 오류 발생'
+                    }
+                }
     
-    # 4. 컨텍스트 데이터 확인
+    # 5. 컨텍스트 데이터 구성
     context = {
         'keyword_articles': keyword_articles,
-        'total_count': sum(len(articles) for articles in keyword_articles.values())
+        'total_count': sum(len(data['articles']) for data in keyword_articles.values())
     }
-    print(f"4. 총 기사 수: {context['total_count']}")
+    print(f"5. 총 기사 수: {context['total_count']}")
     
     return render(request, 'news/news_summary.html', context)
 
