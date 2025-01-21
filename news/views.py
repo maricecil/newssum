@@ -454,7 +454,7 @@ def analyze_trends(request):
             'error': '분석 중 오류가 발생했습니다.'
         }, status=500)
 
-def article_summary(request):
+def article_summary(request=None):
     print("\n=== article_summary 디버깅 ===")
     
     # 1. 캐시 데이터 확인
@@ -467,7 +467,7 @@ def article_summary(request):
     
     if not news_items:
         print("캐시된 뉴스가 없습니다!")
-        return redirect('news:news_list')
+        return None if request is None else redirect('news:news_list')  # request가 없는 경우 None 반환
     
     # 2. 이미 랭킹된 키워드 사용
     print(f"2. 추출된 키워드 수: {len(keyword_rankings)}")
@@ -603,7 +603,10 @@ def article_summary(request):
         except Exception as e:
             logger.error(f"요약 저장 실패 - 키워드: {keyword}, 에러: {str(e)}")
             continue
-    
+
+    # 마지막 부분 수정
+    if request is None:  # 크론잡에서 호출한 경우
+        return keyword_articles  # 분석 결과만 반환
     return render(request, 'news/news_summary.html', context)
 
 def get_top_keyword_articles():
