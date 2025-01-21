@@ -14,7 +14,7 @@
         <div class="mb-6 flex items-center justify-between">
             <div>
                 <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ keyword }} 관련 주요 뉴스</h2>
-                <time class="text-sm text-gray-500">{{ data.timestamp|date:"Y-m-d H:i" }}</time>
+                <time class="text-sm text-gray-500">{{ crawled_time|date:"Y-m-d H:i" }} 기준</time>
             </div>
             <div class="flex items-center gap-4">
                 <button class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
@@ -52,7 +52,7 @@
 
         <!-- 핵심 내용 불릿 포인트 -->
         <ul class="space-y-3 mb-6">
-            {% for article in data.articles %}
+            {% for article in data.articles|dictsort:"source" %}
             <li class="flex flex-col gap-2">
                 <div class="flex items-start gap-2">
                     <span class="text-gray-400 mt-1">•</span>

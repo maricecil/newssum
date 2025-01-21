@@ -23,6 +23,7 @@ from langchain_community.llms import OpenAI
 from crewai.crew import Crew
 from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage
+from django.utils import timezone
 
 logger = logging.getLogger('news')  # Django 설정의 'news' 로거 사용
 
@@ -63,6 +64,7 @@ def news_list(request):
         df = df.sort_values(['company_name', 'rank'])
         news_items = df.to_dict('records')
         print(f"크롤링 완료: {len(news_items)}개 기사")  # 크롤링 결과 확인
+        crawled_time = timezone.now()  # 크롤링 시간 저장
         
         all_titles = [item['title'] for item in news_items]
         current_keywords = extract_keywords(all_titles)
@@ -70,6 +72,10 @@ def news_list(request):
         # 하드코딩된 300 대신 settings의 TIMEOUT 사용
         cache.set('previous_keywords', current_keywords, timeout=CACHE_TIMEOUT)
         cache.set('news_rankings', news_items, timeout=CACHE_TIMEOUT)
+        cache.set('crawled_time', crawled_time, timeout=CACHE_TIMEOUT)
+    else:
+        # 캐시된 크롤링 시간 가져오기
+        crawled_time = cache.get('crawled_time')
     
     # 크롤링된 기사 수 출력
     logger.info(f"Total news items: {len(news_items)}")
@@ -108,7 +114,7 @@ def news_list(request):
         'daily_rankings': daily_rankings,
         'keyword_rankings': keyword_rankings,
         'previous_keywords': previous_keywords,
-        'last_update': last_update,
+        'crawled_time': crawled_time,  # 크롤링 시간 추가
         'refresh_interval': settings.CACHES['default']['TIMEOUT'],
         'llm_analysis': llm_analysis,
         'news_by_company': news_by_company,
@@ -279,7 +285,7 @@ def top_articles(request):
         'keyword_rankings': keyword_rankings,
         'keyword_articles': keyword_articles,
         'total_keyword_articles': total_articles,
-        'last_update': cached_data.get('last_update'),
+        'crawled_time': cached_data.get('crawled_time'),
         'crew_analysis': crew_analysis  # CrewAI 분석 결과 추가
     }
     
@@ -385,7 +391,7 @@ def analyze_trends(request):
                 system_prompt = """
                 모든 언론사의 기사를 반드시 빠짐없이 분석하여 다음 형식으로 정리해주세요:
 
-                보도 관점 분석
+                보도 관점 분석(800자 이내)
                 - [언론사명] (각 언론사별로 반드시 분석)
                 - 주요 보도 프레임과 논조 (예시-"조선일보는 'A정책 실패' 강조, 한겨레는 'B정책 성과' 부각")
                 - 구체적인 표현과 인용구 포함
@@ -402,7 +408,7 @@ def analyze_trends(request):
                 ※ 주의사항
                 - 보도 관점 분석, 주요 쟁점 분석, 종합 분석의 구분을 명확히 할 것
                 - 기사가 하나일지라도 모든 언론사를 빠짐없이 포함하여 누락되지 않게 할 것
-                - 언론사는 중복되지 않도록 할 것
+                - 반드시 언론사가 중복되지 않게 할 것
                 - 구체적인 기사 내용과 표현을 인용하여 분석할 것
                 - 중립적인 톤으로 작성할 것
                 """
@@ -455,7 +461,8 @@ def article_summary(request):
     cached_data = cache.get('news_data', {})
     news_items = cached_data.get('news_items', [])
     keyword_rankings = cached_data.get('keyword_rankings', [])
-    
+    crawled_time = cached_data.get('crawled_time')  # 크롤링 시간 가져오기
+
     print(f"1. 캐시된 뉴스 개수: {len(news_items)}")
     
     if not news_items:
@@ -520,7 +527,7 @@ def article_summary(request):
                 system_prompt = """
                 모든 언론사의 기사를 반드시 빠짐없이 분석하여 다음 형식으로 정리해주세요:
 
-                보도 관점 분석
+                보도 관점 분석(800자 이내)
                 - [언론사명] (각 언론사별로 반드시 분석)
                 - 주요 보도 프레임과 논조 (예시-"조선일보는 'A정책 실패' 강조, 한겨레는 'B정책 성과' 부각")
                 - 구체적인 표현과 인용구 포함
@@ -537,7 +544,7 @@ def article_summary(request):
                 ※ 주의사항
                 - 보도 관점 분석, 주요 쟁점 분석, 종합 분석의 구분을 명확히 할 것
                 - 기사가 하나일지라도 모든 언론사를 빠짐없이 포함하여 누락되지 않게 할 것
-                - 언론사는 중복되지 않도록 할 것
+                - 반드시 언론사가 중복되지 않게 할 것
                 - 구체적인 기사 내용과 표현을 인용하여 분석할 것
                 - 중립적인 톤으로 작성할 것
                 """
@@ -579,7 +586,8 @@ def article_summary(request):
     # 5. 컨텍스트 데이터 구성
     context = {
         'keyword_articles': keyword_articles,
-        'total_count': sum(len(data['articles']) for data in keyword_articles.values())
+        'total_count': sum(len(data['articles']) for data in keyword_articles.values()),
+        'crawled_time': crawled_time,  # 크롤링 시간 추가
     }
     print(f"5. 총 기사 수: {context['total_count']}")
     
