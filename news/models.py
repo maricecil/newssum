@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 class Keyword(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name='키워드')
@@ -34,4 +35,21 @@ class Article(models.Model):
         ]
 
     def __str__(self):
-        return self.title 
+        return self.title
+
+class NewsSummary(models.Model):
+    keyword = models.CharField(max_length=100)
+    crawled_time = models.DateTimeField()
+    created_at = models.DateTimeField(default=timezone.now)
+    articles = models.JSONField()  # 관련 기사 데이터
+    analysis = models.JSONField()  # 분석 결과 데이터
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['keyword']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.keyword} - {self.created_at.strftime('%Y-%m-%d %H:%M')}" 

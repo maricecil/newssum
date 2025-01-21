@@ -9,7 +9,7 @@ from functools import wraps
 import threading
 import re
 from django.db.models import Q
-from .models import Article, Keyword
+from .models import Article, Keyword, NewsSummary
 from django.db.models import Count
 from django.utils import timezone
 import logging
@@ -587,9 +587,22 @@ def article_summary(request):
     context = {
         'keyword_articles': keyword_articles,
         'total_count': sum(len(data['articles']) for data in keyword_articles.values()),
-        'crawled_time': crawled_time,  # 크롤링 시간 추가
+        'crawled_time': crawled_time,
     }
     print(f"5. 총 기사 수: {context['total_count']}")
+    
+    # 컨텍스트 데이터 구성 후 DB에 저장
+    for keyword, data in keyword_articles.items():
+        try:
+            NewsSummary.objects.create(
+                keyword=keyword,
+                crawled_time=crawled_time,
+                articles=data['articles'],
+                analysis=data['analysis']
+            )
+        except Exception as e:
+            logger.error(f"요약 저장 실패 - 키워드: {keyword}, 에러: {str(e)}")
+            continue
     
     return render(request, 'news/news_summary.html', context)
 
@@ -635,3 +648,27 @@ def get_top_keyword_articles():
         'articles': top_articles,
         'total_count': len(top_articles)
     }
+
+def view_saved_summaries(request):
+    # 최근 24시간 내의 요약만 조회
+    recent_summary = NewsSummary.objects.filter(
+        created_at__gte=timezone.now() - timezone.timedelta(days=3)
+    ).order_by('-created_at').first()
+    
+    if recent_summary:
+        context = {
+            'keyword_articles': {
+                recent_summary.keyword: {
+                    'articles': recent_summary.articles,
+                    'analysis': recent_summary.analysis
+                }
+            },
+            'crawled_time': recent_summary.crawled_time,
+        }
+    else:
+        context = {
+            'keyword_articles': {},
+            'crawled_time': None,
+        }
+    
+    return render(request, 'news/news_summary.html', context)
