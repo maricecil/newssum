@@ -467,9 +467,7 @@ def article_summary(request=None):
     
     if not news_items:
         print("캐시된 뉴스가 없습니다!")
-        if request is None or not hasattr(request, 'resolver_match'):
-            return None  # 크론잡이나 resolver_match가 없는 경우
-        return redirect('news:news_list')  # 웹 요청인 경우
+        return None if request is None else redirect('news:news_list')  # request가 없는 경우 None 반환
     
     # 2. 이미 랭킹된 키워드 사용
     print(f"2. 추출된 키워드 수: {len(keyword_rankings)}")
