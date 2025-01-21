@@ -9,7 +9,7 @@ from functools import wraps
 import threading
 import re
 from django.db.models import Q
-from .models import Article, Keyword
+from .models import Article, Keyword, NewsSummary
 from django.db.models import Count
 from django.utils import timezone
 import logging
@@ -23,6 +23,7 @@ from langchain_community.llms import OpenAI
 from crewai.crew import Crew
 from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage
+from django.utils import timezone
 
 logger = logging.getLogger('news')  # Django 설정의 'news' 로거 사용
 
@@ -63,6 +64,7 @@ def news_list(request):
         df = df.sort_values(['company_name', 'rank'])
         news_items = df.to_dict('records')
         print(f"크롤링 완료: {len(news_items)}개 기사")  # 크롤링 결과 확인
+        crawled_time = timezone.now()  # 크롤링 시간 저장
         
         all_titles = [item['title'] for item in news_items]
         current_keywords = extract_keywords(all_titles)
@@ -70,6 +72,10 @@ def news_list(request):
         # 하드코딩된 300 대신 settings의 TIMEOUT 사용
         cache.set('previous_keywords', current_keywords, timeout=CACHE_TIMEOUT)
         cache.set('news_rankings', news_items, timeout=CACHE_TIMEOUT)
+        cache.set('crawled_time', crawled_time, timeout=CACHE_TIMEOUT)
+    else:
+        # 캐시된 크롤링 시간 가져오기
+        crawled_time = cache.get('crawled_time')
     
     # 크롤링된 기사 수 출력
     logger.info(f"Total news items: {len(news_items)}")
@@ -108,7 +114,7 @@ def news_list(request):
         'daily_rankings': daily_rankings,
         'keyword_rankings': keyword_rankings,
         'previous_keywords': previous_keywords,
-        'last_update': last_update,
+        'crawled_time': crawled_time,  # 크롤링 시간 추가
         'refresh_interval': settings.CACHES['default']['TIMEOUT'],
         'llm_analysis': llm_analysis,
         'news_by_company': news_by_company,
@@ -279,7 +285,7 @@ def top_articles(request):
         'keyword_rankings': keyword_rankings,
         'keyword_articles': keyword_articles,
         'total_keyword_articles': total_articles,
-        'last_update': cached_data.get('last_update'),
+        'crawled_time': cached_data.get('crawled_time'),
         'crew_analysis': crew_analysis  # CrewAI 분석 결과 추가
     }
     
@@ -377,29 +383,34 @@ def analyze_trends(request):
                 ])
                 
                 llm = ChatOpenAI(
-                    model_name="gpt-4",
+                    model_name="gpt-3.5-turbo-16k",
                     temperature=0.3,
-                    max_tokens=2000
+                    max_tokens=4000
                 )
                 
                 system_prompt = """
-                여러 언론사의 기사를 비교 분석하여 다음과 같이 정리해주세요:
+                모든 언론사의 기사를 반드시 빠짐없이 분석하여 다음 형식으로 정리해주세요:
 
-                보도 관점 분석
-                - [언론사명] 구체적 보도 프레임과 사용된 표현 분석
-                - 예시) "조선일보는 'A정책 실패' 강조, 한겨레는 'B정책 성과' 부각"
+                보도 관점 분석(800자 이내)
+                - [언론사명] (각 언론사별로 반드시 분석)
+                - 주요 보도 프레임과 논조 (예시-"조선일보는 'A정책 실패' 강조, 한겨레는 'B정책 성과' 부각")
+                - 구체적인 표현과 인용구 포함
+                - 다룬 주요 이슈와 강조점
 
                 주요 쟁점 분석
-                - 언론사별 대립되는 시각과 근거
-                - 예시) "동아일보와 경향신문은 [특정 사안]에 대해 상반된 입장"
+                - 언론사별 대립되는 시각과 근거(예시-"동아일보와 경향신문은 [특정 사안]에 대해 상반된 입장")
 
                 종합 분석
-                - 전체 보도 경향의 특징
-                - 각 언론사의 관점 차이가 두드러진 부분
-                - 독자들이 균형있게 볼 수 있는 관점 제시
-
-                ※ 언론사 이름을 구체적으로 명시하고, 실제 사용된 표현을 인용하여 분석해주세요.
-                ※ 중립적이고 객관적인 톤으로 작성해주세요.
+                - 전체 언론사의 보도 경향성 요약
+                - 각 언론사별 차별화된 시각과 의미
+                - 독자들이 고려해야 할 다양한 관점
+                
+                ※ 주의사항
+                - 보도 관점 분석, 주요 쟁점 분석, 종합 분석의 구분을 명확히 할 것
+                - 기사가 하나일지라도 모든 언론사를 빠짐없이 포함하여 누락되지 않게 할 것
+                - 반드시 언론사가 중복되지 않게 할 것
+                - 구체적인 기사 내용과 표현을 인용하여 분석할 것
+                - 중립적인 톤으로 작성할 것
                 """
                 
                 messages = [
@@ -443,24 +454,25 @@ def analyze_trends(request):
             'error': '분석 중 오류가 발생했습니다.'
         }, status=500)
 
-def article_summary(request):
+def article_summary(request=None):
     print("\n=== article_summary 디버깅 ===")
     
     # 1. 캐시 데이터 확인
     cached_data = cache.get('news_data', {})
     news_items = cached_data.get('news_items', [])
     keyword_rankings = cached_data.get('keyword_rankings', [])
-    
+    crawled_time = cached_data.get('crawled_time')  # 크롤링 시간 가져오기
+
     print(f"1. 캐시된 뉴스 개수: {len(news_items)}")
     
     if not news_items:
         print("캐시된 뉴스가 없습니다!")
-        return redirect('news:news_list')
+        return None if request is None else redirect('news:news_list')  # request가 없는 경우 None 반환
     
     # 2. 이미 랭킹된 키워드 사용
     print(f"2. 추출된 키워드 수: {len(keyword_rankings)}")
-    top_keywords = keyword_rankings[:3] if keyword_rankings else []
-    print(f"3개 키워드: {top_keywords}")
+    top_keywords = keyword_rankings[:1] if keyword_rankings else []
+    print(f"1개 키워드: {top_keywords}")
     
     # 3. 기사 그룹화 및 요약
     keyword_articles = {}
@@ -507,29 +519,34 @@ def article_summary(request):
                 ])
                 
                 llm = ChatOpenAI(
-                    model_name="gpt-4",
+                    model_name="gpt-3.5-turbo-16k",
                     temperature=0.3,
-                    max_tokens=2000
+                    max_tokens=4000
                 )
                 
                 system_prompt = """
-                여러 언론사의 기사를 비교 분석하여 다음과 같이 정리해주세요:
+                모든 언론사의 기사를 반드시 빠짐없이 분석하여 다음 형식으로 정리해주세요:
 
-                보도 관점 분석
-                - [언론사명] 구체적 보도 프레임과 사용된 표현 분석
-                - 예시) "조선일보는 'A정책 실패' 강조, 한겨레는 'B정책 성과' 부각"
+                보도 관점 분석(800자 이내)
+                - [언론사명] (각 언론사별로 반드시 분석)
+                - 주요 보도 프레임과 논조 (예시-"조선일보는 'A정책 실패' 강조, 한겨레는 'B정책 성과' 부각")
+                - 구체적인 표현과 인용구 포함
+                - 다룬 주요 이슈와 강조점
 
                 주요 쟁점 분석
-                - 언론사별 대립되는 시각과 근거
-                - 예시) "동아일보와 경향신문은 [특정 사안]에 대해 상반된 입장"
+                - 언론사별 대립되는 시각과 근거(예시-"동아일보와 경향신문은 [특정 사안]에 대해 상반된 입장")
 
                 종합 분석
-                - 전체 보도 경향의 특징
-                - 각 언론사의 관점 차이가 두드러진 부분
-                - 독자들이 균형있게 볼 수 있는 관점 제시
-
-                ※ 언론사 이름을 구체적으로 명시하고, 실제 사용된 표현을 인용하여 분석해주세요.
-                ※ 중립적이고 객관적인 톤으로 작성해주세요.
+                - 전체 언론사의 보도 경향성 요약
+                - 각 언론사별 차별화된 시각과 의미
+                - 독자들이 고려해야 할 다양한 관점
+                
+                ※ 주의사항
+                - 보도 관점 분석, 주요 쟁점 분석, 종합 분석의 구분을 명확히 할 것
+                - 기사가 하나일지라도 모든 언론사를 빠짐없이 포함하여 누락되지 않게 할 것
+                - 반드시 언론사가 중복되지 않게 할 것
+                - 구체적인 기사 내용과 표현을 인용하여 분석할 것
+                - 중립적인 톤으로 작성할 것
                 """
                 
                 messages = [
@@ -569,10 +586,27 @@ def article_summary(request):
     # 5. 컨텍스트 데이터 구성
     context = {
         'keyword_articles': keyword_articles,
-        'total_count': sum(len(data['articles']) for data in keyword_articles.values())
+        'total_count': sum(len(data['articles']) for data in keyword_articles.values()),
+        'crawled_time': crawled_time,
     }
     print(f"5. 총 기사 수: {context['total_count']}")
     
+    # 컨텍스트 데이터 구성 후 DB에 저장
+    for keyword, data in keyword_articles.items():
+        try:
+            NewsSummary.objects.create(
+                keyword=keyword,
+                crawled_time=crawled_time,
+                articles=data['articles'],
+                analysis=data['analysis']
+            )
+        except Exception as e:
+            logger.error(f"요약 저장 실패 - 키워드: {keyword}, 에러: {str(e)}")
+            continue
+
+    # 마지막 부분 수정
+    if request is None:  # 크론잡에서 호출한 경우
+        return keyword_articles  # 분석 결과만 반환
     return render(request, 'news/news_summary.html', context)
 
 def get_top_keyword_articles():
@@ -617,3 +651,27 @@ def get_top_keyword_articles():
         'articles': top_articles,
         'total_count': len(top_articles)
     }
+
+def view_saved_summaries(request):
+    # 최근 24시간 내의 요약만 조회
+    recent_summary = NewsSummary.objects.filter(
+        created_at__gte=timezone.now() - timezone.timedelta(days=3)
+    ).order_by('-created_at').first()
+    
+    if recent_summary:
+        context = {
+            'keyword_articles': {
+                recent_summary.keyword: {
+                    'articles': recent_summary.articles,
+                    'analysis': recent_summary.analysis
+                }
+            },
+            'crawled_time': recent_summary.crawled_time,
+        }
+    else:
+        context = {
+            'keyword_articles': {},
+            'crawled_time': None,
+        }
+    
+    return render(request, 'news/news_summary.html', context)

@@ -383,3 +383,13 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/python,venv,visualstudiocode,pycharm,macos,windows
+
+# Elastic Beanstalk 관련
+.elasticbeanstalk/
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+# 로컬 개발 환경
+.idea/
+.vscode/
+logs/

@@ -10,23 +10,36 @@
     {% endif %}
     {% for keyword, data in keyword_articles.items %}
     <article class="bg-white rounded-lg shadow-md p-6 mb-8">
-        <!-- 제목과 날짜 -->
-        <div class="mb-6">
-            <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ keyword }} 관련 주요 뉴스</h2>
-            <time class="text-sm text-gray-500">{{ data.articles.0.published_at|date:"Y-m-d H:i" }}</time>
+        <!-- 제목과 메타 정보 -->
+        <div class="mb-6 flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ keyword }} 관련 주요 뉴스</h2>
+                <time class="text-sm text-gray-500">{{ crawled_time|date:"Y-m-d H:i" }} 기준</time>
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                    </svg>
+                    공유하기
+                </button>
+                <span class="text-sm text-gray-500">
+                    {{ data.articles|length }}개의 관련 기사
+                </span>
+            </div>
         </div>
 
         <!-- Agent 분석 결과 -->
         <div class="space-y-4 mb-6 bg-gray-50 p-4 rounded-lg">
             <!-- 분류 결과 -->
             <div>
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">보도 관점 분류</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">보도 관점</h3>
                 <div class="text-sm text-gray-600">{{ data.analysis.classification|linebreaks }}</div>
             </div>
 
             <!-- 비교 분석 -->
             <div>
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">주요 쟁점 분석</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">주요 쟁점</h3>
                 <div class="text-sm text-gray-600">{{ data.analysis.comparison|linebreaks }}</div>
             </div>
 
@@ -39,12 +52,12 @@
 
         <!-- 핵심 내용 불릿 포인트 -->
         <ul class="space-y-3 mb-6">
-            {% for article in data.articles %}
+            {% for article in data.articles|dictsort:"source" %}
             <li class="flex flex-col gap-2">
                 <div class="flex items-start gap-2">
                     <span class="text-gray-400 mt-1">•</span>
                     <div>
-                        <span class="text-gray-900">{{ article.title }}</span>
+                        <a href="{{ article.url }}" target="_blank" class="text-gray-900 hover:text-blue-600">{{ article.title }}</a>
                         <span class="text-sm text-gray-600 ml-2">{{ article.source }}</span>
                     </div>
                 </div>
@@ -57,26 +70,8 @@
             {% endfor %}
         </ul>
 
-        <!-- 하단 액션 버튼 -->
-        <div class="flex items-center justify-between pt-4 border-t border-gray-200">
-            <div class="flex items-center space-x-4">
-                <a href="{{ data.articles.0.url }}" target="_blank" class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                    </svg>
-                    원본 뉴스 보기
-                </a>
-                <button class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
-                    </svg>
-                    공유하기
-                </button>
-            </div>
-            <div class="text-sm text-gray-500">
-                {{ data.articles|length }}개의 관련 기사
-            </div>
-        </div>
+        <!-- 하단 구분선 -->
+        <div class="border-t border-gray-200 mt-4"></div>
     </article>
     {% endfor %}
 </div>

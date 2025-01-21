@@ -16,48 +16,62 @@ from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 
 logger = logging.getLogger(__name__)
 
-def summarize_article(url):
-    """
-    뉴스 기사 URL을 받아서 내용을 요약하는 함수
-    """
+def summarize_articles(urls, batch_size=5):
+    """여러 기사를 배치로 나누어 요약하는 함수"""
     try:
-        # 1. URL에서 기사 내용 가져오기
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
+        # 1. URL 목록을 배치로 나누기
+        batches = [urls[i:i + batch_size] for i in range(0, len(urls), batch_size)]
+        all_summaries = {}
         
-        # 네이버 뉴스 기사 본문 찾기
-        article_body = soup.select_one('#dic_area')
-        if not article_body:
-            return "기사 내용을 찾을 수 없습니다."
+        # 2. 각 배치별로 기존 summarize_article 로직 실행
+        for batch_urls in batches:
+            batch_content = []
+            
+            # 2.1 배치 내 각 URL의 내용 수집
+            for url in batch_urls:
+                response = requests.get(url)
+                soup = BeautifulSoup(response.text, 'html.parser')
+                article_body = soup.select_one('#dic_area')
+                
+                if article_body:
+                    content = article_body.get_text().strip()
+                    batch_content.append(f"{content[:2000]}")
+            
+            # 2.2 배치 내용 한번에 요약
+            llm = ChatOpenAI(
+                model_name="gpt-3.5-turbo-16k",
+                temperature=0.5,
+                max_tokens=300
+            )
+            
+            system_message = """
+            당신은 뉴스 기사를 간단명료하게 요약하는 전문가입니다.
+            주어진 뉴스 기사를 3줄로 요약해주세요.(180자 이내)
+            핵심 내용만 추출하여 객관적으로 작성해주세요.
+            """
+            
+            messages = [
+                SystemMessage(content=system_message),
+                HumanMessage(content="\n".join(batch_content))
+            ]
+            
+            response = llm.generate([messages])
+            summaries = response.generations[0][0].text.split("\n\n")
+            
+            # 2.3 URL과 요약 매핑
+            for url, summary in zip(batch_urls, summaries):
+                all_summaries[url] = summary.strip()
         
-        content = article_body.get_text().strip()
-        
-        # 2. GPT를 사용하여 요약
-        llm = ChatOpenAI(
-            model_name="gpt-4",
-            temperature=0.5,
-            max_tokens=300
-        )
-        
-        system_message = """
-        당신은 뉴스 기사를 간단명료하게 요약하는 전문가입니다.
-        주어진 뉴스 기사를 3줄로 요약해주세요.
-        핵심 내용만 추출하여 객관적으로 작성해주세요.
-        """
-        
-        messages = [
-            SystemMessage(content=system_message),
-            HumanMessage(content=f"다음 뉴스 기사를 요약해주세요:\n\n{content[:2000]}")
-        ]
-        
-        response = llm.generate([messages])
-        summary = response.generations[0][0].text
-        
-        return summary
+        return all_summaries
         
     except Exception as e:
         logger.error(f"요약 중 오류 발생: {str(e)}")
-        return "기사 요약 중 오류가 발생했습니다."
+        return {}
+
+# 기존 함수는 유지하고 배치 처리 함수 호출
+def summarize_article(url):
+    summaries = summarize_articles([url])
+    return summaries.get(url, "기사 요약 중 오류가 발생했습니다.")
 
 class NewsAnalysisCrew:
     def __init__(self, agents=None, tasks=None, verbose=False):
@@ -66,7 +80,7 @@ class NewsAnalysisCrew:
         
         self.llm = ChatOpenAI(
             temperature=0.3,
-            model_name="gpt-4-turbo-preview",  # 16k 컨텍스트 윈도우를 가진 모델로 변경
+            model_name="gpt-3.5-turbo-16k",  # 16k 컨텍스트 윈도우를 가진 모델로 변경
             max_tokens=4000,  # 토큰 제한 증가
         )
         # CrewOutput 초기화 시 기본 구조 확보
@@ -233,26 +247,24 @@ class NewsAnalysisCrew:
             ])
             
             system_prompt = """
-            여러 언론사의 요약된 기사들을 분석하여 차이점을 중심으로 다음 형식으로 정리해주세요:
+            모든 참여 언론사의 기사를 빠짐없이 분석하여 다음 형식으로 정리해주세요:
 
-            1. 보도 관점 분류:
-            - 각 언론사의 보도 프레임과 논조
-            - 주요 논조와 특징
-            - 대표적인 보도 사례
+            보도 관점 분석
+            - [언론사명] 구체적 보도 프레임과 사용된 표현 분석
+            - 예시) "조선일보는 'A정책 실패' 강조, 한겨레는 'B정책 성과' 부각"
 
-            2. 주요 쟁점 분석:
-            - 핵심 쟁점 요약
-            - 언론사간 입장 차이
-            - 주목할만한 표현과 보도 방식
+            주요 쟁점 분석
+            - 언론사별 대립되는 시각과 근거
+            - 예시) "동아일보와 경향신문은 [특정 사안]에 대해 상반된 입장"
 
-            3. 종합 분석:
-            - 전체 보도 경향 요약
-            - 주목할만한 특징
-            - 시사점
+            종합 분석
+            - 전체 보도 경향의 특징
+            - 각 언론사의 관점 차이가 두드러진 부분
+            - 독자들이 균형있게 볼 수 있는 관점 제시
 
-            ※ 각 섹션은 번호를 붙이고, 각 항목은 '-' 기호로 시작하여 간단명료하게 작성해주세요.
-            ※ 각 섹션 사이는 빈 줄로 구분해주세요.
-            ※ "1. 보도 관점 분류:"와 같은 숫자와 제목은 표시하지 말아주세요.
+            ※ 언론사 이름을 구체적으로 명시하고, 실제 사용된 표현을 인용하여 분석해주세요.
+            ※ 중립적이고 객관적인 톤으로 작성해주세요.
+            ※ 언론사는 중복 없이 분석해주세요.
             """
             
             messages = [
