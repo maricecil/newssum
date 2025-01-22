@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from datetime import timedelta
 
 class Keyword(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name='키워드')
@@ -37,6 +38,11 @@ class Article(models.Model):
     def __str__(self):
         return self.title
 
+    @classmethod
+    def cleanup_old_articles(cls):
+        threshold = timezone.now() - timedelta(minutes=30)
+        cls.objects.filter(created_at__lt=threshold).delete()
+
 class NewsSummary(models.Model):
     keyword = models.CharField(max_length=100)
     crawled_time = models.DateTimeField()
@@ -53,3 +59,8 @@ class NewsSummary(models.Model):
     
     def __str__(self):
         return f"{self.keyword} - {self.created_at.strftime('%Y-%m-%d %H:%M')}" 
+
+    @classmethod
+    def cleanup_old_summaries(cls):
+        threshold = timezone.now() - timedelta(minutes=30)
+        cls.objects.filter(created_at__lt=threshold).delete()
