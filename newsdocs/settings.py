@@ -143,3 +143,7 @@ API_TIMEOUT = 30  # 초 단위
 # 연결 재시도 설정
 MAX_RETRIES = 3
 RETRY_BACKOFF = 1  # 초 단위
+
+# 시간 설정
+TIME_ZONE = 'Asia/Seoul'
+USE_TZ = True
