@@ -477,9 +477,28 @@ def article_summary(request=None):
     # 3. 기사 그룹화 및 요약
     keyword_articles = {}
     for keyword_data in top_keywords:
-        keyword, article_count, _ = keyword_data  # 사용하지 않는 articles는 _로 표시
+        keyword, article_count, _ = keyword_data
         print(f"키워드 '{keyword}'의 기사 수: {article_count}")
         
+        # DB에서 최근 저장된 요약 확인
+        try:
+            saved_summary = NewsSummary.objects.filter(
+                keyword=keyword,
+                crawled_time=crawled_time
+            ).first()
+            
+            if saved_summary:
+                print(f"저장된 요약 사용 - 키워드: {keyword}")
+                keyword_articles[keyword] = {
+                    'articles': saved_summary.articles,
+                    'count': len(saved_summary.articles),
+                    'analysis': saved_summary.analysis
+                }
+                continue  # 저장된 데이터가 있으면 새로운 분석 건너뛰기
+        except Exception as e:
+            logger.error(f"저장된 요약 조회 실패: {str(e)}")
+        
+        # 저장된 데이터가 없는 경우에만 새로운 분석 진행
         related_articles = []
         for item in news_items:
             if keyword in item['title']:
@@ -594,12 +613,19 @@ def article_summary(request=None):
     # 컨텍스트 데이터 구성 후 DB에 저장
     for keyword, data in keyword_articles.items():
         try:
+            # crawled_time을 datetime으로 변환
+            if isinstance(crawled_time, str):
+                crawled_time_dt = timezone.datetime.fromisoformat(crawled_time.replace('Z', '+00:00'))
+            else:
+                crawled_time_dt = crawled_time
+
             NewsSummary.objects.create(
                 keyword=keyword,
-                crawled_time=crawled_time,
+                crawled_time=crawled_time_dt,
                 articles=data['articles'],
                 analysis=data['analysis']
             )
+            logger.info(f"요약 저장 성공 - 키워드: {keyword}")
         except Exception as e:
             logger.error(f"요약 저장 실패 - 키워드: {keyword}, 에러: {str(e)}")
             continue
