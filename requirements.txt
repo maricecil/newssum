@@ -156,7 +156,6 @@ Pygments==2.19.1
 PyJWT==2.10.1
 pypdfium2==4.30.1
 PyPika==0.48.9
-pypiwin32==223
 pyproject_hooks==1.2.0
 pyreadline3==3.5.4
 PySocks==1.7.1
