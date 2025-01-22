@@ -52,7 +52,7 @@ class NaverNewsCrawler:
         chrome_options.add_argument('--remote-debugging-port=9222')  # 디버깅 포트 추가
 
         try:
-            service = ChromeService(ChromeDriverManager().install())
+            service = ChromeService()
             driver = webdriver.Chrome(service=service, options=chrome_options)
         except Exception as e:
             logger.error(f"ChromeDriver 초기화 실패: {e}")
