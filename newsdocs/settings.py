@@ -14,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '3.34.130.172']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '54.180.108.226']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
