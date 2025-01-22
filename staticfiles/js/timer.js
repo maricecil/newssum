@@ -1,5 +1,6 @@
 function startCountdown() {
-    var timeLeft = 300;
+    var timeLeft = 900;
+    var isReloading = false;
     
     function updateTimer() {
         var min = Math.floor(timeLeft / 60);
@@ -10,10 +11,13 @@ function startCountdown() {
         
         document.getElementById("countdown").textContent = min + ":" + sec;
         
-        if (timeLeft <= 0) {
-            location.reload();
+        if (timeLeft <= 0 && !isReloading) {
+            isReloading = true;
+            setTimeout(function() {
+                location.reload();
+            }, 1000);
         } else {
-            timeLeft = timeLeft - 1;
+            timeLeft--;
         }
     }
     
