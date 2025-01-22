@@ -13,6 +13,8 @@ from datetime import datetime
 import time
 import logging
 from news.models import Article, NewsSummary
+from django.core.cache import cache
+from django.utils import timezone
 
 
 logger = logging.getLogger('crawling')  # Django 설정의 'crawling' 로거 사용
@@ -31,6 +33,7 @@ class NaverNewsCrawler:
             '022': '세계일보',
             '469': '한국일보'
         }
+        self.CACHE_TIMEOUT = 1800  # 30분
         
     def setup_driver(self):
         chrome_options = Options()
@@ -122,22 +125,42 @@ class NaverNewsCrawler:
                 driver.quit()
     
     def crawl_all_companies(self):
-        # 크롤링 전 이전 데이터 정리
-        Article.cleanup_old_articles()
-        NewsSummary.cleanup_old_summaries()
-        
-        all_news = []
-        for code in self.news_companies.keys():
-            try:
-                news_items = self.crawl_news_ranking(code)
-                if news_items:
-                    all_news.extend(news_items)
-                time.sleep(2)  # 신문사 간 딜레이
-            except Exception as e:
-                logger.error(f"신문사 크롤링 실패 ({code}): {str(e)}")
-                continue
-        
-        return pd.DataFrame(all_news)
+        try:
+            # 캐시 확인
+            cached_data = cache.get('news_data')
+            if cached_data:
+                last_crawled = cached_data.get('crawled_time')
+                if last_crawled and (timezone.now() - last_crawled).seconds < self.CACHE_TIMEOUT:
+                    logger.info("캐시된 데이터 사용")
+                    return pd.DataFrame(cached_data.get('news_items', []))
+            
+            # 새로운 크롤링 시작
+            logger.info("새로운 크롤링 시작")
+            all_news = []
+            for code in self.news_companies.keys():
+                try:
+                    news_items = self.crawl_news_ranking(code)
+                    if news_items:
+                        all_news.extend(news_items)
+                    time.sleep(2)
+                except Exception as e:
+                    logger.error(f"신문사 크롤링 실패 ({code}): {str(e)}")
+                    continue
+            
+            if all_news:
+                df = pd.DataFrame(all_news)
+                # 캐시 업데이트
+                cache.set('news_data', {
+                    'news_items': all_news,
+                    'crawled_time': timezone.now()
+                }, timeout=self.CACHE_TIMEOUT)
+                return df
+            
+            return pd.DataFrame([])
+            
+        except Exception as e:
+            logger.error(f"크롤링 중 오류 발생: {str(e)}")
+            return pd.DataFrame([])
     
     def crawl_content(self, url):
         driver = None
