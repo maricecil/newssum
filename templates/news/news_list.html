@@ -271,7 +271,7 @@
                     <div class="flex items-center gap-2 mb-2">
                         <h1 class="text-xl font-bold">실시간 주요 뉴스</h1>
                         <span class="text-sm text-gray-500">
-                            ({{ last_update|date:'Y.m.d H:i' }} 기준)
+                            ({{ crawled_time|date:"Y-m-d H:i" }} 기준)
                         </span>
                     </div>
                     <div class="grid gap-1">

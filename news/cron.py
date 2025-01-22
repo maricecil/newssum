@@ -7,6 +7,7 @@ from crawling.naver_news_crawler import NaverNewsCrawler
 from .utils import extract_keywords
 from django.conf import settings
 import logging
+from news.models import Article, NewsSummary
 
 logger = logging.getLogger('news')
 
@@ -46,4 +47,14 @@ class AutoSummaryCronJob(CronJobBase):
             
         except Exception as e:
             logger.error(f"자동 수집 중 오류 발생: {str(e)}")
+
+class CleanupCronJob(CronJobBase):
+    RUN_EVERY_MINS = 30  # 30분마다 실행
+    
+    schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+    code = 'news.cleanup_cron_job'
+    
+    def do(self):
+        Article.cleanup_old_articles()  # 30분 이전 기사 삭제
+        NewsSummary.cleanup_old_summaries()  # 1시간 이전 요약 삭제
 

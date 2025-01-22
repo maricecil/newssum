@@ -12,6 +12,7 @@ import pandas as pd
 from datetime import datetime
 import time
 import logging
+from news.models import Article, NewsSummary
 
 
 logger = logging.getLogger('crawling')  # Django 설정의 'crawling' 로거 사용
@@ -121,6 +122,10 @@ class NaverNewsCrawler:
                 driver.quit()
     
     def crawl_all_companies(self):
+        # 크롤링 전 이전 데이터 정리
+        Article.cleanup_old_articles()
+        NewsSummary.cleanup_old_summaries()
+        
         all_news = []
         for code in self.news_companies.keys():
             try:
