@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -51,8 +51,14 @@ class NaverNewsCrawler:
         chrome_options.add_argument('--lang=ko_KR')
         chrome_options.add_argument('--remote-debugging-port=9222')  # 디버깅 포트 추가
 
-        service = Service(ChromeDriverManager().install())
-        return webdriver.Chrome(service=service, options=chrome_options)
+        try:
+            service = ChromeService(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+        except Exception as e:
+            logger.error(f"ChromeDriver 초기화 실패: {e}")
+            raise
+
+        return driver
     
     def crawl_news_ranking(self, company_code):
         driver = None
