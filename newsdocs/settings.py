@@ -14,7 +14,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '54.180.108.226']
+ALLOWED_HOSTS = [
+    '127.0.0.1', 
+    'localhost', 
+    '54.180.108.226', 
+    'newssum.ngrok.io',
+    '.ngrok.io',  # 추가
+    '*ngrok.io',  # 추가
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://newssum.ngrok.io',
+    'http://newssum.ngrok.io'  # http도 추가
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
