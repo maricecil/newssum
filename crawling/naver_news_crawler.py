@@ -50,31 +50,25 @@ class NaverNewsCrawler:
         chrome_options.add_argument('--disable-features=IsolateOrigins,site-per-process')
         chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
-        # 프로필 디렉토리 관련 설정 수정
+        temp_dir = tempfile.mkdtemp()
+        chrome_options.add_argument(f'--user-data-dir={temp_dir}')
+        
         try:
-            # 임시 디렉토리를 시스템 임시 폴더에 생성
-            temp_dir = tempfile.mkdtemp()
-            chrome_options.add_argument(f'--user-data-dir={temp_dir}')
-            
             import platform
             if platform.system() == 'Linux':
-                # Ubuntu 서버 환경
                 service = ChromeService('/usr/bin/chromedriver')
             else:
-                # 로컬 개발 환경
                 service = ChromeService(ChromeDriverManager().install())
             
             driver = webdriver.Chrome(service=service, options=chrome_options)
             return driver
+            
         except Exception as e:
+            # 실패시에만 임시 디렉토리 정리
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
             logger.error(f"ChromeDriver 초기화 실패: {e}")
             raise
-        finally:
-            # 드라이버 종료 후 임시 디렉토리 정리
-            try:
-                shutil.rmtree(temp_dir, ignore_errors=True)
-            except Exception as e:
-                logger.error(f"임시 디렉토리 정리 실패: {e}")
     
     def crawl_news_ranking(self, company_code):
         driver = None
