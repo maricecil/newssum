@@ -40,13 +40,25 @@ class NaverNewsCrawler:
         self.CACHE_TIMEOUT = 1800  # 30분
         
     def setup_driver(self):
+        # Chrome 옵션 설정
         chrome_options = Options()
-        chrome_options.add_argument('--headless=new')
+        
+        # 기본 옵션
+        chrome_options.add_argument('--headless=new')  # 새로운 헤드리스 모드
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--window-size=1920,1080')
+        chrome_options.add_argument("--disable-extensions")
+        chrome_options.add_argument('--ignore-certificate-errors')
+        chrome_options.add_argument('--allow-running-insecure-content')
         chrome_options.add_argument("--disable-setuid-sandbox")
+        chrome_options.add_argument('--lang=ko_KR')
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        
+        # 자동화 감지 회피를 위한 실험적 옵션
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
         
         try:
             # Linux 환경에서는 직접 chromedriver 경로 지정
@@ -57,6 +69,14 @@ class NaverNewsCrawler:
                 service = ChromeService(ChromeDriverManager().install())
             
             driver = webdriver.Chrome(service=service, options=chrome_options)
+            
+            # 자동화 감지 회피를 위한 JavaScript 실행
+            driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            
+            # 페이지 로드 타임아웃 설정
+            driver.set_page_load_timeout(300)
+            driver.implicitly_wait(100)
+            
             return driver
             
         except Exception as e:
