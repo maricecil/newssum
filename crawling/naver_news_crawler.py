@@ -62,6 +62,13 @@ class NaverNewsCrawler:
         chrome_options.add_argument('--disk-cache-size=0')
         chrome_options.add_argument('--media-cache-size=0')
         
+        # 임시 디렉토리 설정 추가
+        user_temp_dir = os.path.expanduser('~/.chrome-temp')
+        if not os.path.exists(user_temp_dir):
+            os.makedirs(user_temp_dir, exist_ok=True)
+        chrome_options.add_argument(f'--user-data-dir={user_temp_dir}')
+        chrome_options.add_argument('--profile-directory=Default')
+        
         try:
             if platform.system() == 'Linux':
                 service = Service('/usr/bin/chromedriver')
@@ -78,6 +85,7 @@ class NaverNewsCrawler:
             if platform.system() == 'Linux':
                 logger.error(f"ChromeDriver 상태: {os.popen('ls -l /usr/bin/chromedriver').read()}")
                 logger.error(f"Chrome 프로세스: {os.popen('ps aux | grep chrome').read()}")
+                logger.error(f"임시 디렉토리 상태: {os.popen(f'ls -la {user_temp_dir}').read()}")
             raise
             
     def crawl_news_ranking(self, company_code):
