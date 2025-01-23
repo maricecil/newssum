@@ -52,6 +52,7 @@ class NaverNewsCrawler:
 
         temp_dir = tempfile.mkdtemp()
         chrome_options.add_argument(f'--user-data-dir={temp_dir}')
+        chrome_options.add_argument('--profile-directory=Default')
         
         try:
             import platform
