@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8">
+<div class="max-w-full md:max-w-4xl mx-auto px-3 md:px-4 py-4 md:py-8">
     <!-- 스켈레톤 UI (로딩 중) -->
     <div id="skeleton" class="hidden">
         <div class="bg-white rounded-lg shadow-md p-6 mb-8 animate-pulse">
@@ -52,19 +52,17 @@
         {% for keyword, data in keyword_articles.items %}
         <article class="bg-white rounded-lg shadow-md p-6 mb-8">
             <!-- 제목과 메타 정보 -->
-            <div class="mb-6 flex items-center justify-between">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-900">{{ keyword }} 관련 주요 뉴스</h2>
-                </div>
-                <div class="text-sm text-gray-500 flex items-center gap-3">
+            <div class="mb-4 md:mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+                <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-0">{{ keyword }} 관련 주요 뉴스</h2>
+                <div class="text-sm text-gray-500 flex items-center gap-2 md:gap-3">
                     <span>{{ data.articles|length }}개의 관련 기사</span>
-                    <span>·</span>
+                    <span class="hidden md:inline">·</span>
                     <time>{{ crawled_time|date:"Y-m-d H:i" }} 기준</time>
                 </div>
             </div>
 
             <!-- Agent 분석 결과 -->
-            <div class="space-y-4 mb-6 bg-gray-50 p-4 rounded-lg">
+            <div class="space-y-3 md:space-y-4 mb-4 md:mb-6 bg-gray-50 p-3 md:p-4 rounded-lg">
                 <!-- 분류 결과 -->
                 <div>
                     <h3 class="text-lg font-semibold text-gray-800 mb-2">보도 관점</h3>
@@ -85,7 +83,7 @@
             </div>
 
             <!-- 핵심 내용 불릿 포인트 -->
-            <ul class="space-y-3 mb-6">
+            <ul class="space-y-2 md:space-y-3 mb-4 md:mb-6">
                 {% for article in data.articles|dictsort:"source" %}
                 <li class="flex flex-col gap-2">
                     <div class="flex items-start gap-2">
@@ -128,4 +126,43 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 1000);  // 1초 후 전환
 });
 </script>
+
+<style>
+    @media (max-width: 768px) {
+        /* 컨테이너 조정 */
+        .max-w-full {
+            max-width: 100% !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        
+        /* 카드 레이아웃 */
+        article.bg-white {
+            margin: 0 -1rem 2rem -1rem !important;
+            width: calc(100% + 2rem) !important;
+            border-radius: 0 !important;
+        }
+        
+        /* 분석 결과 영역 */
+        .bg-gray-50 {
+            margin: 0 -0.75rem !important;
+            width: calc(100% + 1.5rem) !important;
+            padding: 1rem !important;
+        }
+        
+        /* 기사 목록 */
+        .space-y-2 {
+            padding: 0 0.5rem !important;
+        }
+        
+        /* 여백 및 간격 조정 */
+        .mb-4 {
+            margin-bottom: 1rem !important;
+        }
+        
+        .p-6 {
+            padding: 1.25rem !important;
+        }
+    }
+    </style>
 {% endblock %}
