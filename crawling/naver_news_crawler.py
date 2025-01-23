@@ -52,11 +52,8 @@ class NaverNewsCrawler:
         chrome_options.add_argument("--disable-setuid-sandbox")
         
         try:
-            if platform.system() == 'Linux':
-                service = ChromeService('/usr/bin/chromedriver')
-            else:
-                service = ChromeService(ChromeDriverManager().install())
-            
+            # ChromeDriverManager 대신 직접 Service 객체 생성
+            service = ChromeService()
             driver = webdriver.Chrome(service=service, options=chrome_options)
             return driver
             
