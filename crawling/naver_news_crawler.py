@@ -132,13 +132,7 @@ class NaverNewsCrawler:
                 last_crawled = cached_data.get('crawled_time')
                 if last_crawled and (timezone.now() - last_crawled).seconds < self.CACHE_TIMEOUT:
                     logger.info("캐시된 데이터 사용")
-                    news_items = cached_data.get('news_items', [])
-                    # DataFrame 생성 전에 필수 컬럼 존재 확인
-                    required_columns = ['company_code', 'company_name', 'title', 'url', 'rank', 'crawled_at']
-                    if news_items and all(col in news_items[0] for col in required_columns):
-                        return pd.DataFrame(news_items)
-                    else:
-                        logger.warning("캐시된 데이터 구조 오류, 새로운 크롤링 시작")
+                    return pd.DataFrame(cached_data.get('news_items', []))
             
             # 새로운 크롤링 시작
             logger.info("새로운 크롤링 시작")
@@ -147,35 +141,26 @@ class NaverNewsCrawler:
                 try:
                     news_items = self.crawl_news_ranking(code)
                     if news_items:
-                        # 데이터 구조 검증
-                        for item in news_items:
-                            if all(k in item for k in ['company_code', 'company_name', 'title', 'url', 'rank']):
-                                all_news.append(item)
+                        all_news.extend(news_items)
                     time.sleep(2)
                 except Exception as e:
                     logger.error(f"신문사 크롤링 실패 ({code}): {str(e)}")
                     continue
             
             if all_news:
-                # DataFrame 생성 전 데이터 검증
                 df = pd.DataFrame(all_news)
-                required_columns = ['company_code', 'company_name', 'title', 'url', 'rank']
-                if all(col in df.columns for col in required_columns):
-                    # 캐시 업데이트
-                    cache.set('news_data', {
-                        'news_items': all_news,
-                        'crawled_time': timezone.now()
-                    }, timeout=self.CACHE_TIMEOUT)
-                    logger.info(f"크롤링 완료: {len(all_news)}건")
-                    return df
-                else:
-                    logger.error("필수 컬럼 누락")
+                # 캐시 업데이트
+                cache.set('news_data', {
+                    'news_items': all_news,
+                    'crawled_time': timezone.now()
+                }, timeout=self.CACHE_TIMEOUT)
+                return df
             
-            return pd.DataFrame(columns=['company_code', 'company_name', 'title', 'url', 'rank', 'crawled_at'])
+            return pd.DataFrame([])
             
         except Exception as e:
             logger.error(f"크롤링 중 오류 발생: {str(e)}")
-            return pd.DataFrame(columns=['company_code', 'company_name', 'title', 'url', 'rank', 'crawled_at'])
+            return pd.DataFrame([])
     
     def crawl_content(self, url):
         driver = None
