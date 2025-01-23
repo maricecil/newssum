@@ -40,48 +40,51 @@ class NaverNewsCrawler:
         self.CACHE_TIMEOUT = 1800  # 30분
         
     def setup_driver(self):
-        # Chrome 옵션 설정
         chrome_options = Options()
-        
-        # 기본 옵션
-        chrome_options.add_argument('--headless=new')  # 새로운 헤드리스 모드
+        chrome_options.add_argument('--headless=new')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--window-size=1920,1080')
-        chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument('--ignore-certificate-errors')
-        chrome_options.add_argument('--allow-running-insecure-content')
-        chrome_options.add_argument("--disable-setuid-sandbox")
-        chrome_options.add_argument('--lang=ko_KR')
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
         
-        # 자동화 감지 회피를 위한 실험적 옵션
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        chrome_options.add_experimental_option('useAutomationExtension', False)
+        # 한글 및 인코딩 관련 설정
+        chrome_options.add_argument('--lang=ko_KR')
+        chrome_options.add_argument('--remote-debugging-port=9222')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--no-default-browser-check')
+        chrome_options.add_argument('--ignore-certificate-errors')
+        chrome_options.add_argument('--ignore-ssl-errors')
+        chrome_options.add_argument('--disable-popup-blocking')
+        chrome_options.add_argument('--blink-settings=imagesEnabled=false')
+        chrome_options.add_argument('--disable-logging')
+        
+        # 테스트용 print 추가
+        print("Step 1: Chrome options 설정 완료")
         
         try:
-            # Linux 환경에서는 직접 chromedriver 경로 지정
             if platform.system() == 'Linux':
+                print("Step 2: Linux 환경 감지")
+                # Ubuntu 서버용 설정
+                chrome_options.add_argument('--disable-extensions')
+                chrome_options.add_argument('--disable-dev-tools')
                 service = ChromeService(executable_path='/usr/bin/chromedriver')
             else:
-                # Windows/Mac 환경에서는 ChromeDriverManager 사용
+                # 로컬 Windows/Mac 환경용 설정
                 service = ChromeService(ChromeDriverManager().install())
             
+            print("Step 3: ChromeService 생성 완료")
             driver = webdriver.Chrome(service=service, options=chrome_options)
             
-            # 자동화 감지 회피를 위한 JavaScript 실행
-            driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            # 페이지 로딩 설정
+            driver.implicitly_wait(10)
             
-            # 페이지 로드 타임아웃 설정
-            driver.set_page_load_timeout(300)
-            driver.implicitly_wait(100)
-            
+            print("Step 4: Chrome Driver 생성 완료")
             return driver
             
         except Exception as e:
-            logger.error(f"ChromeDriver 초기화 실패: {e}")
+            logger.error(f"단계별 테스트 중 오류 발생: {e}")
             logger.error(f"현재 운영체제: {platform.system()}")
+            if platform.system() == 'Linux':
+                os.system('ls -la /usr/bin/chromedriver')
+                os.system('whoami')
             raise
     
     def crawl_news_ranking(self, company_code):
