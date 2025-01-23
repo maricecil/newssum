@@ -394,3 +394,5 @@ $RECYCLE.BIN/
 .vscode/
 logs/
 media/
+
+chrome_profile/
