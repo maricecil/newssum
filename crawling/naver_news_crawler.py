@@ -16,6 +16,8 @@ from news.models import Article, NewsSummary
 from django.core.cache import cache
 from django.utils import timezone
 import tempfile
+import os
+import shutil
 
 
 logger = logging.getLogger('crawling')  # Django 설정의 'crawling' 로거 사용
@@ -42,11 +44,22 @@ class NaverNewsCrawler:
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-software-rasterizer')
+        chrome_options.add_argument('--disable-features=VizDisplayCompositor')
+        chrome_options.add_argument('--disable-features=IsolateOrigins,site-per-process')
         chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-        temp_dir = tempfile.mkdtemp()
-        chrome_options.add_argument(f'--user-data-dir={temp_dir}')
 
+        # 임시 디렉토리 설정 수정
         try:
+            temp_dir = '/tmp/chrome-profile'
+            if not os.path.exists(temp_dir):
+                os.makedirs(temp_dir, mode=0o777)
+            chrome_options.add_argument(f'--user-data-dir={temp_dir}')
+            
+            # 프로필 디렉토리 추가
+            chrome_options.add_argument('--profile-directory=Default')
+            
             import platform
             if platform.system() == 'Linux':
                 # Ubuntu 서버 환경
@@ -60,6 +73,10 @@ class NaverNewsCrawler:
         except Exception as e:
             logger.error(f"ChromeDriver 초기화 실패: {e}")
             raise
+        finally:
+            # 사용 후 임시 디렉토리 정리
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
     
     def crawl_news_ranking(self, company_code):
         driver = None
