@@ -18,6 +18,7 @@ from django.utils import timezone
 import tempfile
 import os
 import shutil
+import platform
 
 
 logger = logging.getLogger('crawling')  # Django 설정의 'crawling' 로거 사용
@@ -44,18 +45,13 @@ class NaverNewsCrawler:
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-gpu')
+        
+        # 프로필 관련 옵션 제거 (기본값 사용)
         chrome_options.add_argument('--disable-extensions')
-        chrome_options.add_argument('--disable-software-rasterizer')
-        chrome_options.add_argument('--disable-features=VizDisplayCompositor')
-        chrome_options.add_argument('--disable-features=IsolateOrigins,site-per-process')
-        chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-
-        temp_dir = tempfile.mkdtemp()
-        chrome_options.add_argument(f'--user-data-dir={temp_dir}')
-        chrome_options.add_argument('--profile-directory=Default')
+        chrome_options.add_argument('--remote-debugging-port=9222')
+        chrome_options.add_argument("--disable-setuid-sandbox")
         
         try:
-            import platform
             if platform.system() == 'Linux':
                 service = ChromeService('/usr/bin/chromedriver')
             else:
@@ -65,9 +61,6 @@ class NaverNewsCrawler:
             return driver
             
         except Exception as e:
-            # 실패시에만 임시 디렉토리 정리
-            if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir, ignore_errors=True)
             logger.error(f"ChromeDriver 초기화 실패: {e}")
             raise
     
