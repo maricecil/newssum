@@ -16,7 +16,6 @@ from news.models import Article, NewsSummary
 from django.core.cache import cache
 from django.utils import timezone
 
-
 logger = logging.getLogger('crawling')  # Django 설정의 'crawling' 로거 사용
 
 class NaverNewsCrawler:
@@ -37,36 +36,29 @@ class NaverNewsCrawler:
         
     def setup_driver(self):
         chrome_options = Options()
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--disable-software-rasterizer')
-        chrome_options.add_argument('--ignore-certificate-errors')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        chrome_options.add_experimental_option('useAutomationExtension', False)
-        chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        
+        # 기본 옵션 설정
         chrome_options.add_argument('--headless=new')
         chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--window-size=1920,1080')
         chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument('--allow-running-insecure-content')
-        chrome_options.add_argument("--disable-setuid-sandbox")
+        chrome_options.add_argument('--ignore-certificate-errors')
         chrome_options.add_argument('--lang=ko_KR')
-        
-        chrome_options.add_argument('--no-first-run')
-        chrome_options.add_argument('--no-default-browser-check')
-        chrome_options.add_argument('--user-data-dir=/tmp/chrome-user-data')
-        chrome_options.add_argument('--remote-debugging-port=0')
+        chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         
         try:
+            # WebDriver Manager를 통한 자동 설치
             service = ChromeService(ChromeDriverManager().install())
-            driver = webdriver.Chrome(service=service, options=chrome_options)
+            
+            driver = webdriver.Chrome(
+                service=service,
+                options=chrome_options
+            )
             return driver
         except Exception as e:
             logger.error(f"ChromeDriver 초기화 실패: {e}")
-            import subprocess
-            subprocess.run(['pkill', 'chrome'])
-            subprocess.run(['pkill', 'chromedriver'])
             raise
     
     def crawl_news_ranking(self, company_code):
