@@ -47,46 +47,39 @@ class NaverNewsCrawler:
         
         # 한글 및 인코딩 관련 설정
         chrome_options.add_argument('--lang=ko_KR')
-        chrome_options.add_argument('--remote-debugging-port=9222')
         chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--no-default-browser-check')
         chrome_options.add_argument('--ignore-certificate-errors')
-        chrome_options.add_argument('--ignore-ssl-errors')
         chrome_options.add_argument('--disable-popup-blocking')
-        chrome_options.add_argument('--blink-settings=imagesEnabled=false')
-        chrome_options.add_argument('--disable-logging')
         
-        # 테스트용 print 추가
-        print("Step 1: Chrome options 설정 완료")
+        # 메모리 관련 설정
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-dev-tools')
+        chrome_options.add_argument('--blink-settings=imagesEnabled=false')
+        chrome_options.add_argument('--window-size=1920,1080')
+        
+        # 캐시 비활성화
+        chrome_options.add_argument('--disable-application-cache')
+        chrome_options.add_argument('--disk-cache-size=0')
+        chrome_options.add_argument('--media-cache-size=0')
         
         try:
             if platform.system() == 'Linux':
-                print("Step 2: Linux 환경 감지")
-                # Ubuntu 서버용 설정
-                chrome_options.add_argument('--disable-extensions')
-                chrome_options.add_argument('--disable-dev-tools')
-                service = ChromeService(executable_path='/usr/bin/chromedriver')
+                service = Service('/usr/bin/chromedriver')
             else:
-                # 로컬 Windows/Mac 환경용 설정
-                service = ChromeService(ChromeDriverManager().install())
+                service = Service(ChromeDriverManager().install())
             
-            print("Step 3: ChromeService 생성 완료")
             driver = webdriver.Chrome(service=service, options=chrome_options)
-            
-            # 페이지 로딩 설정
             driver.implicitly_wait(10)
-            
-            print("Step 4: Chrome Driver 생성 완료")
             return driver
             
         except Exception as e:
-            logger.error(f"단계별 테스트 중 오류 발생: {e}")
+            logger.error(f"Chrome Driver 초기화 실패: {e}")
             logger.error(f"현재 운영체제: {platform.system()}")
             if platform.system() == 'Linux':
-                os.system('ls -la /usr/bin/chromedriver')
-                os.system('whoami')
+                logger.error(f"ChromeDriver 상태: {os.popen('ls -l /usr/bin/chromedriver').read()}")
+                logger.error(f"Chrome 프로세스: {os.popen('ps aux | grep chrome').read()}")
             raise
-    
+            
     def crawl_news_ranking(self, company_code):
         driver = None
         try:
