@@ -49,8 +49,22 @@ class NaverNewsCrawler:
         chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         
         try:
-            # WebDriver Manager를 통한 자동 설치
-            service = ChromeService(ChromeDriverManager().install())
+            display = None
+            # 운영체제 확인
+            import platform
+            if platform.system() == 'Linux':
+                # Ubuntu 서버용 설정
+                chrome_options.binary_location = '/usr/bin/chromium-browser'
+                service = ChromeService('/usr/bin/chromedriver')
+                
+                # 가상 디스플레이 설정 (Linux 환경에서만)
+                from pyvirtualdisplay import Display
+                display = Display(visible=0, size=(1920, 1080))
+                display.start()
+            else:
+                # 로컬 개발 환경용 설정
+                from webdriver_manager.chrome import ChromeDriverManager
+                service = ChromeService(ChromeDriverManager().install())
             
             driver = webdriver.Chrome(
                 service=service,
@@ -59,7 +73,15 @@ class NaverNewsCrawler:
             return driver
         except Exception as e:
             logger.error(f"ChromeDriver 초기화 실패: {e}")
+            if platform.system() == 'Linux':
+                # Linux 환경에서만 프로세스 정리
+                import subprocess
+                subprocess.run(['pkill', 'chrome'])
+                subprocess.run(['pkill', 'chromedriver'])
             raise
+        finally:
+            if display:
+                display.stop()
     
     def crawl_news_ranking(self, company_code):
         driver = None
