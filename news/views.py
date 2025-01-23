@@ -314,12 +314,13 @@ def news_summary(request):
     )
     
     context = {
+        'is_loading': True,  # 로딩 상태 추가
         'articles': articles,
         'keyword_rankings': keyword_rankings,
         'llm_analysis': llm_analysis,
     }
     
-    return render(request, 'news/news_summary.html', context) 
+    return render(request, 'news/news_summary.html', context)
 
 @require_http_methods(["POST"])
 def analyze_trends(request):
@@ -604,6 +605,7 @@ def article_summary(request=None):
     
     # 5. 컨텍스트 데이터 구성
     context = {
+        'is_loading': True,  # 로딩 상태 추가
         'keyword_articles': keyword_articles,
         'total_count': sum(len(data['articles']) for data in keyword_articles.values()),
         'crawled_time': crawled_time,
