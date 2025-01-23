@@ -3,69 +3,129 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-8">
-    {% if not keyword_articles %}
-    <div class="text-center py-12">
-        <p class="text-gray-500">현재 표시할 뉴스가 없습니다.</p>
+    <!-- 스켈레톤 UI (로딩 중) -->
+    <div id="skeleton" class="hidden">
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8 animate-pulse">
+            <div class="mb-6 flex items-center justify-between">
+                <div class="h-8 bg-gray-200 rounded w-1/3"></div>
+                <div class="h-4 bg-gray-200 rounded w-1/4"></div>
+            </div>
+            
+            <div class="space-y-4 mb-6 bg-gray-50 p-4 rounded-lg">
+                <div>
+                    <div class="h-6 bg-gray-200 rounded w-1/4 mb-2"></div>
+                    <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                    <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+                </div>
+                
+                <div>
+                    <div class="h-6 bg-gray-200 rounded w-1/4 mb-2"></div>
+                    <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                    <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                </div>
+                
+                <div>
+                    <div class="h-6 bg-gray-200 rounded w-1/4 mb-2"></div>
+                    <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                    <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+                </div>
+            </div>
+            
+            <ul class="space-y-3 mb-6">
+                {% for i in "123"|make_list %}
+                <li class="flex flex-col gap-2">
+                    <div class="h-4 bg-gray-200 rounded w-full"></div>
+                    <div class="h-4 bg-gray-200 rounded w-5/6 ml-6"></div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
-    {% endif %}
-    {% for keyword, data in keyword_articles.items %}
-    <article class="bg-white rounded-lg shadow-md p-6 mb-8">
-        <!-- 제목과 메타 정보 -->
-        <div class="mb-6 flex items-center justify-between">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-900">{{ keyword }} 관련 주요 뉴스</h2>
-            </div>
-            <div class="text-sm text-gray-500 flex items-center gap-3">
-                <span>{{ data.articles|length }}개의 관련 기사</span>
-                <span>·</span>
-                <time>{{ crawled_time|date:"Y-m-d H:i" }} 기준</time>
-            </div>
+
+    <!-- 실제 콘텐츠 -->
+    <div id="content" class="hidden">
+        {% if not keyword_articles %}
+        <div class="text-center py-12">
+            <p class="text-gray-500">현재 표시할 뉴스가 없습니다.</p>
         </div>
-
-        <!-- Agent 분석 결과 -->
-        <div class="space-y-4 mb-6 bg-gray-50 p-4 rounded-lg">
-            <!-- 분류 결과 -->
-            <div>
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">보도 관점</h3>
-                <div class="text-sm text-gray-600">{{ data.analysis.classification|linebreaks }}</div>
+        {% endif %}
+        {% for keyword, data in keyword_articles.items %}
+        <article class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <!-- 제목과 메타 정보 -->
+            <div class="mb-6 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">{{ keyword }} 관련 주요 뉴스</h2>
+                </div>
+                <div class="text-sm text-gray-500 flex items-center gap-3">
+                    <span>{{ data.articles|length }}개의 관련 기사</span>
+                    <span>·</span>
+                    <time>{{ crawled_time|date:"Y-m-d H:i" }} 기준</time>
+                </div>
             </div>
 
-            <!-- 비교 분석 -->
-            <div>
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">주요 쟁점</h3>
-                <div class="text-sm text-gray-600">{{ data.analysis.comparison|linebreaks }}</div>
+            <!-- Agent 분석 결과 -->
+            <div class="space-y-4 mb-6 bg-gray-50 p-4 rounded-lg">
+                <!-- 분류 결과 -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">보도 관점</h3>
+                    <div class="text-sm text-gray-600">{{ data.analysis.classification|linebreaks }}</div>
+                </div>
+
+                <!-- 비교 분석 -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">주요 쟁점</h3>
+                    <div class="text-sm text-gray-600">{{ data.analysis.comparison|linebreaks }}</div>
+                </div>
+
+                <!-- 통합 요약 -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">종합 분석</h3>
+                    <div class="text-sm text-gray-600">{{ data.analysis.summary|linebreaks }}</div>
+                </div>
             </div>
 
-            <!-- 통합 요약 -->
-            <div>
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">종합 분석</h3>
-                <div class="text-sm text-gray-600">{{ data.analysis.summary|linebreaks }}</div>
-            </div>
-        </div>
-
-        <!-- 핵심 내용 불릿 포인트 -->
-        <ul class="space-y-3 mb-6">
-            {% for article in data.articles|dictsort:"source" %}
-            <li class="flex flex-col gap-2">
-                <div class="flex items-start gap-2">
-                    <span class="text-gray-400 mt-1">•</span>
-                    <div>
-                        <a href="{{ article.url }}" target="_blank" class="text-gray-900 hover:text-blue-600">{{ article.title }}</a>
-                        <span class="text-sm text-gray-600 ml-2">{{ article.source }}</span>
+            <!-- 핵심 내용 불릿 포인트 -->
+            <ul class="space-y-3 mb-6">
+                {% for article in data.articles|dictsort:"source" %}
+                <li class="flex flex-col gap-2">
+                    <div class="flex items-start gap-2">
+                        <span class="text-gray-400 mt-1">•</span>
+                        <div>
+                            <a href="{{ article.url }}" target="_blank" class="text-gray-900 hover:text-blue-600">{{ article.title }}</a>
+                            <span class="text-sm text-gray-600 ml-2">{{ article.source }}</span>
+                        </div>
                     </div>
-                </div>
-                {% if article.summary != "요약 없음" %}
-                <div class="ml-6 text-sm text-gray-600">
-                    {{ article.summary }}
-                </div>
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ul>
+                    {% if article.summary != "요약 없음" %}
+                    <div class="ml-6 text-sm text-gray-600">
+                        {{ article.summary }}
+                    </div>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
 
-        <!-- 하단 구분선 -->
-        <div class="border-t border-gray-200 mt-4"></div>
-    </article>
-    {% endfor %}
+            <!-- 하단 구분선 -->
+            <div class="border-t border-gray-200 mt-4"></div>
+        </article>
+        {% endfor %}
+    </div>
 </div>
+
+<!-- JavaScript for loading state -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const skeleton = document.getElementById('skeleton');
+    const content = document.getElementById('content');
+    
+    // 초기 상태: 스켈레톤 표시, 콘텐츠 숨김
+    skeleton.classList.remove('hidden');
+    content.classList.add('hidden');
+    
+    // 데이터 로딩 완료 후
+    setTimeout(function() {  // 최소 로딩 시간 보장
+        skeleton.classList.add('hidden');
+        content.classList.remove('hidden');
+    }, 1000);  // 1초 후 전환
+});
+</script>
 {% endblock %}
