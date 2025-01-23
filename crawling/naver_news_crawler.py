@@ -41,21 +41,21 @@ class NaverNewsCrawler:
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--window-size=1920,1080')
-        chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument('--ignore-certificate-errors')
-        chrome_options.add_argument('--lang=ko_KR')
         chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
         try:
-            service = ChromeService(ChromeDriverManager().install())
+            import platform
+            if platform.system() == 'Linux':
+                # Ubuntu 서버 환경
+                service = ChromeService('/usr/bin/chromedriver')
+            else:
+                # 로컬 개발 환경
+                service = ChromeService(ChromeDriverManager().install())
+            
             driver = webdriver.Chrome(service=service, options=chrome_options)
             return driver
         except Exception as e:
             logger.error(f"ChromeDriver 초기화 실패: {e}")
-            import subprocess
-            subprocess.run(['pkill', 'chrome'])
-            subprocess.run(['pkill', 'chromedriver'])
             raise
     
     def crawl_news_ranking(self, company_code):
