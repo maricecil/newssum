@@ -1,221 +1,230 @@
-aiohappyeyeballs==2.4.4
-aiohttp==3.11.11
-aiosignal==1.3.2
-annotated-types==0.7.0
-anyio==4.8.0
-appdirs==1.4.4
-asgiref==3.8.1
-asttokens==3.0.0
-attrs==24.3.0
-auth0-python==4.7.2
-backcall==0.2.0
-backoff==2.2.1
-bcrypt==4.2.1
-beautifulsoup4==4.12.3
-bleach==6.2.0
-blinker==1.9.0
-botocore==1.35.99
-build==1.2.2.post1
-cachetools==5.5.0
-cement==2.10.14
-certifi==2024.12.14
-cffi==1.17.1
-charset-normalizer==3.4.1
-chroma-hnswlib==0.7.6
-chromadb==0.6.3
-click==8.1.8
-colorama==0.4.6
-coloredlogs==15.0.1
-crewai==0.98.0
-cryptography==43.0.3
-dataclasses-json==0.6.7
-decorator==5.1.1
-defusedxml==0.7.1
-Deprecated==1.2.15
-distro==1.9.0
-Django==4.2
-django-cron==0.6.0
-django-redis==5.4.0
-djangorestframework==3.15.2
-docopt==0.6.2
-docstring_parser==0.16
-duckduckgo_search==7.2.1
-durationpy==0.9
-et_xmlfile==2.0.0
-executing==2.1.0
-faiss-cpu==1.9.0.post1
-fastapi==0.115.6
-fastjsonschema==2.21.1
-filelock==3.16.1
-flatbuffers==24.12.23
-frozenlist==1.5.0
-fsspec==2024.12.0
-google-auth==2.37.0
-googleapis-common-protos==1.66.0
-greenlet==3.1.1
-grpcio==1.69.0
-gunicorn==23.0.0
-h11==0.14.0
-httpcore==1.0.7
-httptools==0.6.4
-httpx==0.27.2
-httpx-sse==0.4.0
-huggingface-hub==0.27.1
-humanfriendly==10.0
-idna==3.10
-importlib_metadata==8.5.0
-importlib_resources==6.5.2
-instructor==1.7.2
-ipython==8.12.3
-jedi==0.19.2
-Jinja2==3.1.5
-jiter==0.8.2
-jmespath==1.0.1
-jpype1==1.5.1
-json_repair==0.35.0
-jsonpatch==1.33
-jsonpickle==4.0.1
-jsonpointer==3.0.0
-jsonref==1.1.0
-jsonschema==4.23.0
-jsonschema-specifications==2024.10.1
-jupyter_client==8.6.3
-jupyter_core==5.7.2
-jupyterlab_pygments==0.3.0
-konlpy==0.6.0
-kubernetes==31.0.0
-langchain==0.3.14
-langchain-community==0.3.14
-langchain-core==0.3.29
-langchain-openai==0.3.0
-langchain-text-splitters==0.3.4
-litellm==1.57.4
-lxml==5.3.0
-markdown-it-py==3.0.0
-MarkupSafe==3.0.2
-marshmallow==3.24.1
-matplotlib-inline==0.1.7
-mdurl==0.1.2
-mecab-ko-dic==1.0.0
-mecab-python==1.0.0
-mecab-python3==1.0.10
-mistune==3.1.0
-mmh3==5.0.1
-monotonic==1.6
-mpmath==1.3.0
-multidict==6.1.0
-mypy-extensions==1.0.0
-nbclient==0.10.2
-nbconvert==7.16.5
-nbformat==5.10.4
-networkx==3.4.2
-numpy==2.2.1
-oauthlib==3.2.2
-onnxruntime==1.20.1
-openai==1.59.3
-openpyxl==3.1.5
-opentelemetry-api==1.29.0
-opentelemetry-exporter-otlp-proto-common==1.29.0
-opentelemetry-exporter-otlp-proto-grpc==1.29.0
-opentelemetry-exporter-otlp-proto-http==1.29.0
-opentelemetry-instrumentation==0.50b0
-opentelemetry-instrumentation-asgi==0.50b0
-opentelemetry-instrumentation-fastapi==0.50b0
-opentelemetry-proto==1.29.0
-opentelemetry-sdk==1.29.0
-opentelemetry-semantic-conventions==0.50b0
-opentelemetry-util-http==0.50b0
-orjson==3.10.13
-outcome==1.3.0.post0
-overrides==7.7.0
-packaging==24.2
-pandas==2.2.3
-pandocfilters==1.5.1
-parso==0.8.4
-pathspec==0.10.1
-pdfminer.six==20231228
-pdfplumber==0.11.5
-pickleshare==0.7.5
-pillow==11.1.0
-pipreqs==0.5.0
-platformdirs==4.3.6
-posthog==3.8.3
-primp==0.10.0
-prompt_toolkit==3.0.48
-propcache==0.2.1
-protobuf==5.29.3
-pure_eval==0.2.3
-pyasn1==0.6.1
-pyasn1_modules==0.4.1
-pycparser==2.22
-pydantic==2.10.4
-pydantic-settings==2.7.1
-pydantic_core==2.27.2
-Pygments==2.19.1
-PyJWT==2.10.1
-pypdfium2==4.30.1
-PyPika==0.48.9
-pyproject_hooks==1.2.0
-pyreadline3==3.5.4
-PySocks==1.7.1
-python-dateutil==2.9.0.post0
-python-dotenv==1.0.1
-python-mecab-ko-dic==2.1.1.post2
-pytz==2024.2
-pyvis==0.3.2
-PyYAML==6.0.2
-pyzmq==26.2.0
-redis==5.2.1
-referencing==0.36.1
-regex==2024.11.6
-requests==2.32.3
-requests-oauthlib==2.0.0
-requests-toolbelt==1.0.0
-rich==13.9.4
-rpds-py==0.22.3
-rsa==4.9
-selenium==4.27.1
-semantic-version==2.10.0
-setuptools==75.8.0
-shellingham==1.5.4
-six==1.17.0
-sniffio==1.3.1
-sortedcontainers==2.4.0
-soupsieve==2.6
-SQLAlchemy==2.0.36
-sqlparse==0.5.3
-stack-data==0.6.3
-starlette==0.41.3
-sympy==1.13.3
-tenacity==9.0.0
-termcolor==2.5.0
-tiktoken==0.8.0
-tinycss2==1.4.0
-tokenizers==0.21.0
-tomli==2.2.1
-tomli_w==1.2.0
-tornado==6.4.2
-tqdm==4.67.1
-traitlets==5.14.3
-trio==0.28.0
-trio-websocket==0.11.1
-typer==0.15.1
-typing-inspect==0.9.0
-typing_extensions==4.12.2
-tzdata==2024.2
-urllib3==2.3.0
-uv==0.5.20
-uvicorn==0.34.0
-watchfiles==1.0.4
-wcwidth==0.2.13
-webdriver-manager==4.0.2
-webencodings==0.5.1
-websocket-client==1.8.0
-websockets==14.1
-wrapt==1.17.2
-wsproto==1.2.0
-yarg==0.1.9
-yarl==1.18.3
-zipp==3.21.0
-whitenoise==6.6.0
-pyvirtualdisplay==3.0
+# === 코어 웹 프레임워크 ===
+Django==4.2  # Django 웹 프레임워크
+djangorestframework==3.15.2  # REST API 기능
+django-background-tasks==1.2.8  # 백그라운드 작업 처리
+django-cron==0.6.0  # 정기적 작업 스케줄링
+django-redis==5.4.0  # Django Redis 캐싱
+gunicorn==23.0.0  # 프로덕션 WSGI 서버
+whitenoise==6.8.2  # 정적 파일 서빙
+asgiref==3.8.1  # ASGI 인터페이스 - Django 의존성
+starlette==0.41.3  # ASGI 프레임워크 - fastapi 의존성
+
+# === 데이터베이스/ORM ===
+mysqlclient==2.2.6  # MySQL 데이터베이스 어댑터
+sqlparse==0.5.3  # SQL 쿼리 파싱 (Django 의존성)
+greenlet==3.1.1  # 경량 코루틴 - SQLAlchemy 의존성
+PyPika==0.48.9  # SQL 빌더 - chromadb 의존성
+
+# === 크롤링/네트워킹 ===
+beautifulsoup4==4.12.3  # HTML 파싱
+selenium==4.28.0  # 동적 웹 크롤링
+requests==2.32.3  # HTTP 클라이언트
+webdriver-manager==4.0.2  # Selenium 웹드라이버 관리
+soupsieve==2.6  # beautifulsoup4 의존성
+urllib3==2.3.0  # HTTP 클라이언트 라이브러리
+aiohttp==3.11.11  # 비동기 HTTP 클라이언트
+httpx==0.27.2  # HTTP 클라이언트
+httpcore==1.0.7  # HTTP 클라이언트 코어
+httptools==0.6.4  # HTTP 파싱
+requests-oauthlib==2.0.0  # OAuth 지원
+requests-toolbelt==1.0.0  # requests 확장 도구
+PyVirtualDisplay==3.0  # 가상 디스플레이
+PySocks==1.7.1  # SOCKS 프록시
+websocket-client==1.8.0  # WebSocket 클라이언트
+websockets==14.1  # WebSocket 구현
+h11==0.14.0  # HTTP/1.1 구현
+httpx-sse==0.4.0  # SSE 클라이언트
+aiohappyeyeballs==2.4.4  # 비동기 DNS 리졸버
+
+# === AI/LLM 관련 ===
+crewai==0.98.0  # AI 에이전트 프레임워크
+langchain==0.3.14  # LLM 체이닝 프레임워크
+langchain-community==0.3.14  # LangChain 커뮤니티 확장
+langchain-core==0.3.29  # LangChain 핵심 기능
+langchain-openai==0.3.0  # OpenAI 통합
+langchain-text-splitters==0.3.4  # 텍스트 분할
+langsmith==0.2.10  # LangChain 도구
+openai==1.59.3  # OpenAI API
+faiss-cpu==1.9.0  # 벡터 유사도 검색
+tiktoken==0.8.0  # OpenAI 토크나이저
+chromadb==0.6.3  # 벡터 데이터베이스
+chroma-hnswlib==0.7.6  # 벡터 검색
+litellm==1.57.4  # LLM 래퍼
+instructor==1.7.2  # OpenAI 도구
+primp==0.10.0  # 프롬프트 도구
+huggingface-hub==0.27.1  # Hugging Face
+tokenizers==0.21.0  # 토크나이저
+
+# === 자연어 처리 ===
+konlpy==0.6.0  # 한국어 자연어 처리
+jpype1==1.5.1  # Java-Python 브리지
+
+# === 캐싱/성능 ===
+redis==5.2.1  # Redis 클라이언트
+cachetools==5.5.0  # 캐싱 도구
+propcache==0.2.1  # 캐시 도구
+
+# === 데이터 처리/분석 ===
+numpy>=1.23.2,<3.0.0  # 수치 연산 라이브러리
+pandas==2.2.3  # 데이터 분석 도구
+pytz==2024.2  # 시간대 처리
+python-dateutil==2.9.0.post0  # 날짜/시간 처리
+networkx==3.4.2  # 그래프 처리
+sympy==1.13.3  # 기호 수학
+mpmath==1.3.0  # 수학 라이브러리
+pyvis==0.3.2  # 네트워크 시각화
+
+# === 문서/파일 처리 ===
+PyYAML==6.0.2  # YAML 파일 처리
+pillow==11.1.0  # 이미지 처리
+et_xmlfile==2.0.0  # Excel XML 처리
+lxml==5.3.0  # XML 처리
+defusedxml==0.7.1  # 안전한 XML 파싱
+
+# === 데이터 검증/직렬화 ===
+pydantic==2.10.4  # 데이터 검증
+pydantic-settings==2.7.1  # 설정 관리
+pydantic_core==2.27.2  # pydantic 코어
+dataclasses-json==0.6.7  # JSON 직렬화
+marshmallow==3.24.1  # 객체 직렬화
+orjson==3.10.13  # 고성능 JSON
+jsonpickle==4.0.1  # JSON 직렬화
+json_repair==0.35.0  # JSON 복구
+jsonpatch==1.33  # JSON 패치
+jsonpointer==3.0.0  # JSON 포인터
+jsonref==1.1.0  # JSON 참조
+jsonschema==4.23.0  # JSON 스키마
+jiter==0.8.2  # JSON 반복자
+
+# === 보안/인증 ===
+cryptography==43.0.3  # 암호화
+bcrypt==4.2.1  # 패스워드 해싱
+PyJWT==2.10.1  # JWT 처리
+oauthlib==3.2.2  # OAuth
+google-auth==2.37.0  # 구글 인증
+rsa==4.9  # RSA 암호화
+
+# === 모니터링/텔레메트리 ===
+opentelemetry-api==1.29.0  # 텔레메트리 API
+opentelemetry-sdk==1.29.0  # 텔레메트리 SDK
+opentelemetry-instrumentation==0.50b0  # 계측
+opentelemetry-instrumentation-asgi==0.50b0  # ASGI 계측
+opentelemetry-instrumentation-fastapi==0.50b0  # FastAPI 계측
+opentelemetry-exporter-otlp-proto-common==1.29.0  # 텔레메트리 내보내기
+opentelemetry-exporter-otlp-proto-grpc==1.29.0  # gRPC 내보내기
+opentelemetry-exporter-otlp-proto-http==1.29.0  # HTTP 내보내기
+opentelemetry-proto==1.29.0  # 프로토콜
+opentelemetry-semantic-conventions==0.50b0  # 규약
+opentelemetry-util-http==0.50b0  # HTTP 유틸리티
+posthog==3.8.3  # 사용자 분석
+
+# === 유틸리티/도구 ===
+python-dotenv==1.0.1  # 환경변수 관리
+tqdm==4.67.1  # 진행률 표시
+typing_extensions==4.12.2  # 타입 힌팅 확장
+typing-inspect==0.9.0  # 타입 검사
+annotated-types==0.7.0  # 타입 힌팅
+mypy-extensions==1.0.0  # 타입 힌팅
+click==8.1.8  # CLI 도구
+typer==0.15.1  # CLI 프레임워크
+cement==2.10.14  # CLI 프레임워크
+prompt_toolkit==3.0.48  # CLI 도구
+shellingham==1.5.4  # 셸 감지
+termcolor==2.5.0  # 터미널 색상
+colorama==0.4.6  # 터미널 색상
+coloredlogs==15.0.1  # 로그 색상화
+humanfriendly==10.0  # 사용자 친화적 출력
+appdirs==1.4.4  # 앱 디렉토리
+platformdirs==4.3.6  # 플랫폼 디렉토리
+filelock==3.16.1  # 파일 잠금
+fsspec==2024.12.0  # 파일시스템
+pathspec==0.10.1  # 경로 매칭
+backoff==2.2.1  # 재시도 로직
+tenacity==9.0.0  # 재시도 로직
+Deprecated==1.2.15  # 경고 데코레이터
+wrapt==1.17.2  # 데코레이터
+overrides==7.7.0  # 메서드 오버라이드
+monotonic==1.6  # 단조 시계
+durationpy==0.9  # 시간 간격
+semantic-version==2.10.0  # 버전 관리
+
+# === 개발 도구 ===
+ipython==8.12.3  # 대화형 파이썬 셸
+jupyter_core==5.7.2  # Jupyter 코어
+jupyter_client==8.6.3  # Jupyter 클라이언트
+nbformat==5.10.4  # 노트북 포맷
+nbconvert==7.16.5  # 노트북 변환
+nbclient==0.10.2  # 노트북 실행
+jupyterlab_pygments==0.3.0  # 구문 강조
+rich==13.9.4  # 터미널 출력
+Pygments==2.19.1  # 구문 강조
+markdown-it-py==3.0.0  # 마크다운 파서
+pipreqs==0.5.0  # 의존성 분석
+build==1.2.2.post1  # 패키지 빌드
+setuptools==75.8.0  # 패키지 설치
+pyproject_hooks==1.2.0  # 프로젝트 훅
+git-filter-repo==2.47.0  # Git 필터
+uv==0.5.20  # 패키지 설치
+
+# === 기타 의존성 ===
+aiosignal==1.3.2  # aiohttp 의존성
+anyio==4.8.0  # 비동기 IO
+asttokens==3.0.0  # AST 토큰
+attrs==24.3.0  # 클래스 속성
+backcall==0.2.0  # 콜백 처리
+blinker==1.9.0  # 시그널 처리
+certifi==2024.12.14  # SSL 인증서
+cffi==1.17.1  # C 외부 함수 인터페이스
+charset-normalizer==3.4.1  # 문자셋 처리
+decorator==5.1.1  # 데코레이터
+distro==1.9.0  # 리눅스 배포판
+executing==2.1.0  # 코드 실행 추적
+fastjsonschema==2.21.1  # JSON 스키마
+flatbuffers==24.12.23  # 직렬화
+frozenlist==1.5.0  # 불변 리스트
+googleapis-common-protos==1.66.0  # 구글 프로토콜
+grpcio==1.69.0  # gRPC
+idna==3.10  # 국제화 도메인
+importlib_metadata==8.5.0  # 메타데이터
+importlib_resources==6.5.2  # 리소스
+jedi==0.19.2  # 자동완성
+Jinja2==3.1.5  # 템플릿 엔진
+jmespath==1.0.1  # JSON 경로
+MarkupSafe==3.0.2  # HTML/XML 이스케이프
+matplotlib-inline==0.1.7  # 인라인 그래프
+mdurl==0.1.2  # 마크다운 URL
+mistune==3.1.0  # 마크다운 파서
+mmh3==5.0.1  # 해시 함수
+multidict==6.1.0  # 다중값 딕셔너리
+outcome==1.3.0.post0  # 결과 처리
+packaging==24.2  # 패키지 도구
+pandocfilters==1.5.1  # Pandoc 필터
+parso==0.8.4  # 파서
+pickleshare==0.7.5  # 피클 저장소
+protobuf==5.29.3  # 프로토콜 버퍼
+pure_eval==0.2.3  # 표현식 평가
+pyasn1==0.6.1  # ASN.1
+pyasn1_modules==0.4.1  # ASN.1 모듈
+pycparser==2.22  # C 파서
+pyzmq==26.2.0  # ZMQ
+referencing==0.36.1  # JSON 참조
+regex==2024.11.6  # 정규식
+rpds-py==0.22.3  # 영구 자료구조
+six==1.17.0  # 호환성 도구
+sniffio==1.3.1  # 비동기 호환성
+sortedcontainers==2.4.0  # 정렬 컨테이너
+tinycss2==1.4.0  # CSS 파서
+tomli==2.2.1  # TOML 파서
+tomli_w==1.2.0  # TOML 작성기
+tornado==6.4.2  # 웹 서버
+traitlets==5.14.3  # 설정 도구
+trio==0.28.0  # 비동기 프레임워크
+trio-websocket==0.11.1  # WebSocket
+tzdata==2024.2  # 시간대 데이터
+watchfiles==1.0.4  # 파일 감시
+wcwidth==0.2.13  # 문자 폭
+webencodings==0.5.1  # 웹 인코딩
+wsproto==1.2.0  # WebSocket
+yarg==0.1.9  # 인자 파싱
+yarl==1.18.3  # URL 파싱
+zipp==3.21.0  # ZIP 임포트

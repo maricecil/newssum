@@ -45,56 +45,41 @@ class NaverNewsCrawler:
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         
-        # 한글 및 인코딩 관련 설정
+        # 공통 옵션
         chrome_options.add_argument('--lang=ko_KR')
         chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--ignore-certificate-errors')
         chrome_options.add_argument('--disable-popup-blocking')
-        
-        # 메모리 관련 설정
         chrome_options.add_argument('--disable-extensions')
         chrome_options.add_argument('--disable-dev-tools')
         chrome_options.add_argument('--blink-settings=imagesEnabled=false')
         chrome_options.add_argument('--window-size=1920,1080')
         
-        # 캐시 비활성화
-        chrome_options.add_argument('--disable-application-cache')
-        chrome_options.add_argument('--disk-cache-size=0')
-        chrome_options.add_argument('--media-cache-size=0')
-        
-        # 임시 디렉토리 설정 추가
-        user_temp_dir = os.path.expanduser('~/.chrome-temp')
-        if not os.path.exists(user_temp_dir):
-            os.makedirs(user_temp_dir, exist_ok=True)
-        chrome_options.add_argument(f'--user-data-dir={user_temp_dir}')
-        chrome_options.add_argument('--profile-directory=Default')
+        # OS별 옵션 분리
+        if platform.system() == 'Windows':
+            # Windows 전용 옵션
+            chrome_options.add_argument('--disable-gpu')  # Windows에서 필수
+            service = Service(ChromeDriverManager().install())
+        else:
+            # Linux 전용 옵션
+            chrome_options.add_argument('--single-process')
+            chrome_options.add_argument('--disable-application-cache')
+            service = Service('/usr/bin/chromedriver')
         
         try:
-            if platform.system() == 'Linux':
-                service = Service('/usr/bin/chromedriver')
-            else:
-                service = Service(ChromeDriverManager().install())
-            
             driver = webdriver.Chrome(service=service, options=chrome_options)
             driver.implicitly_wait(10)
             return driver
             
         except Exception as e:
             logger.error(f"Chrome Driver 초기화 실패: {e}")
-            logger.error(f"현재 운영체제: {platform.system()}")
-            if platform.system() == 'Linux':
-                logger.error(f"ChromeDriver 상태: {os.popen('ls -l /usr/bin/chromedriver').read()}")
-                logger.error(f"Chrome 프로세스: {os.popen('ps aux | grep chrome').read()}")
-                logger.error(f"임시 디렉토리 상태: {os.popen(f'ls -la {user_temp_dir}').read()}")
             raise
             
-    def crawl_news_ranking(self, company_code):
-        driver = None
+    def crawl_news_ranking(self, company_code, driver):
         try:
             logger.info(f"크롤링 시작: {self.news_companies[company_code]}")
             started_at = datetime.now()
             
-            driver = self.setup_driver()
             url = f"https://media.naver.com/press/{company_code}/ranking"
             driver.get(url)
             time.sleep(3)
@@ -144,11 +129,8 @@ class NaverNewsCrawler:
             logger.error(f"크롤링 중 오류 발생: {str(e)}")
             return None
             
-        finally:
-            if driver:
-                driver.quit()
-    
     def crawl_all_companies(self):
+        driver = None
         try:
             # 캐시 확인
             cached_data = cache.get('news_data')
@@ -170,9 +152,10 @@ class NaverNewsCrawler:
                 # 새로운 크롤링 시작
                 logger.info("새로운 크롤링 시작")
                 all_news = []
+                driver = self.setup_driver()
                 for code in self.news_companies.keys():
                     try:
-                        news_items = self.crawl_news_ranking(code)
+                        news_items = self.crawl_news_ranking(code, driver)
                         if news_items:
                             all_news.extend(news_items)
                         time.sleep(2)
@@ -237,7 +220,7 @@ class NaverNewsCrawler:
 if __name__ == "__main__":
     crawler = NaverNewsCrawler()
     # 전체 대신 하나의 신문사만 테스트 (예: 국민일보 '005')
-    result = crawler.crawl_news_ranking('005')
+    result = crawler.crawl_news_ranking('005', None)
     if result:
         print("\n=== 크롤링 결과 ===")
         print(f"총 {len(result)}개의 뉴스를 수집했습니다.")
