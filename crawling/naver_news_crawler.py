@@ -158,29 +158,41 @@ class NaverNewsCrawler:
                     logger.info("캐시된 데이터 사용")
                     return pd.DataFrame(cached_data.get('news_items', []))
             
-            # 새로운 크롤링 시작
-            logger.info("새로운 크롤링 시작")
-            all_news = []
-            for code in self.news_companies.keys():
-                try:
-                    news_items = self.crawl_news_ranking(code)
-                    if news_items:
-                        all_news.extend(news_items)
-                    time.sleep(2)
-                except Exception as e:
-                    logger.error(f"신문사 크롤링 실패 ({code}): {str(e)}")
-                    continue
+            # 크롤링 락 확인
+            if cache.get('crawling_in_progress'):
+                logger.info("다른 크롤링이 진행 중, 이전 캐시 사용")
+                return pd.DataFrame(cached_data.get('news_items', [])) if cached_data else pd.DataFrame([])
             
-            if all_news:
-                df = pd.DataFrame(all_news)
-                # 캐시 업데이트
-                cache.set('news_data', {
-                    'news_items': all_news,
-                    'crawled_time': timezone.now()
-                }, timeout=self.CACHE_TIMEOUT)
-                return df
+            # 크롤링 락 설정
+            cache.set('crawling_in_progress', True, timeout=300)  # 5분 타임아웃
             
-            return pd.DataFrame([])
+            try:
+                # 새로운 크롤링 시작
+                logger.info("새로운 크롤링 시작")
+                all_news = []
+                for code in self.news_companies.keys():
+                    try:
+                        news_items = self.crawl_news_ranking(code)
+                        if news_items:
+                            all_news.extend(news_items)
+                        time.sleep(2)
+                    except Exception as e:
+                        logger.error(f"신문사 크롤링 실패 ({code}): {str(e)}")
+                        continue
+                    
+                if all_news:
+                    df = pd.DataFrame(all_news)
+                    cache.set('news_data', {
+                        'news_items': all_news,
+                        'crawled_time': timezone.now()
+                    }, timeout=self.CACHE_TIMEOUT)
+                    return df
+                    
+                return pd.DataFrame([])
+                
+            finally:
+                # 크롤링 락 해제
+                cache.delete('crawling_in_progress')
             
         except Exception as e:
             logger.error(f"크롤링 중 오류 발생: {str(e)}")

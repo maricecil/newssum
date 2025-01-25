@@ -119,7 +119,7 @@
                 </div>
 
             <!-- 하단 2단 그리드 섹션 -->
-            <div class="grid grid-cols-2 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                 <!-- 언론사별 주요 기사 섹션 -->
                 <div class="w-full">
                     <h1 class="text-2xl font-bold mb-4">
@@ -262,9 +262,23 @@
             {% endif %}
         </div>
     {% else %}
+        <style>
+        @media (max-width: 768px) {
+            /* 모바일에서만 적용되는 스타일 */
+            .news-layout > div {
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .news-layout > div > div:nth-child(2) {
+                order: -1;  /* 실시간 뉴스를 위로 */
+                margin-bottom: 1.5rem;
+            }
+        }
+        </style>
 
-        <!-- 실시간 뉴스 랭킹 (메인) -->
-        <div class="mb-3">
+        <div class="mb-3 news-layout">
+            <!-- 실시간 뉴스 랭킹 (메인) -->
             <div class="flex justify-between gap-8">
                 <!-- 실시간 주요 뉴스 섹션 -->
                 <div class="flex-1">
@@ -308,7 +322,7 @@
                                     </a>
                                 </div>
                                 <!-- 슬라이더 컨테이너 -->
-                                <div class="relative w-[36rem] ml-1 overflow-hidden h-6">
+                                <div class="relative w-full md:w-[36rem] ml-1 overflow-hidden h-6">
                                     <div id="keywordSlider{{ forloop.counter }}" class="flex flex-col transition-all duration-700">
                                         {% with shown_titles="" %}
                                             {% for item in news_items %}
@@ -344,7 +358,7 @@
             
             {% regroup news_items by company_name as news_by_company %}
             
-            <div class="grid grid-cols-4 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 {% for company in news_by_company %}
                 <div class="bg-white rounded-lg shadow p-2">
                     <div class="flex items-center gap-3 mb-2 bg-gray-50 -mx-2 -mt-2 p-2">
@@ -512,12 +526,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                 elements.analyzeBtn.addEventListener('click', async function() {
                     if (window.isAnalyzing) return;
 
-                    if (window.selectedCompanyList.size === 0 && window.selectedKeywordList.size === 0) {
-                        alert('분석할 언론사나 키워드를 선택해주세요.');
-                        return;
-                    }
-
                     try {
+                        // 1. 입력 검증 강화
+                        if (window.selectedCompanyList.size === 0 && window.selectedKeywordList.size === 0) {
+                            alert('분석할 언론사나 키워드를 선택해주세요.');
+                            return;
+                        }
+
+                        // 2. 상태 관리 개선
                         window.isAnalyzing = true;
                         elements.analyzeBtn.disabled = true;
                         
@@ -526,11 +542,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                             elements.analyzeBtn.classList.add('opacity-50', 'cursor-not-allowed');
                         }
 
+                        // 3. 요청 데이터 구조화
                         const requestData = {
                             companies: Array.from(window.selectedCompanyList),
-                            keywords: Array.from(window.selectedKeywordList)
+                            keywords: Array.from(window.selectedKeywordList),
+                            timestamp: new Date().toISOString()  // 캐시 충돌 방지
                         };
 
+                        // 4. 에러 처리 개선
                         const response = await fetch('/news/analyze/trends/', {
                             method: 'POST',
                             headers: {
@@ -540,22 +559,32 @@ document.addEventListener('DOMContentLoaded', async function() {
                             body: JSON.stringify(requestData)
                         });
                         
+                        // 5. 응답 상태 코드 처리 개선
                         if (!response.ok) {
-                            throw new Error(`서버 응답 오류: ${response.status}`);
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(errorData.message || `서버 응답 오류: ${response.status}`);
                         }
 
                         const data = await response.json();
                         
+                        // 6. 성공 처리 개선
                         if (data.success) {
                             const results = document.getElementById('analysisResults');
                             if (!results) {
                                 throw new Error('분석 결과를 표시할 요소를 찾을 수 없습니다.');
                             }
 
-                            results.classList.remove('hidden');
+                            // 7. UI 업데이트 최적화
+                            results.style.display = 'none';  // 변경 전 숨김
                             updateAnalysisResults(data);
+                            results.classList.remove('hidden');
                             results.style.display = 'block';
-                            results.scrollIntoView({ behavior: 'smooth' });
+                            
+                            // 8. 부드러운 스크롤 처리
+                            results.scrollIntoView({ 
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
                         } else {
                             throw new Error(data.error || '분석 결과를 가져오는데 실패했습니다.');
                         }
@@ -564,6 +593,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         console.error('분석 중 상세 오류:', error);
                         alert(`분석 중 오류가 발생했습니다: ${error.message}`);
                     } finally {
+                        // 9. 상태 초기화 보장
                         window.isAnalyzing = false;
                         elements.analyzeBtn.disabled = false;
                         
@@ -952,4 +982,79 @@ const SliderManager = {
 };
 
 </script>
+
+<style>
+@media (max-width: 768px) {
+    /* 기존 스타일 유지 */
+    .flex.gap-8 {
+        flex-direction: column !important
+    }
+    
+    .w-1\/2 {
+        width: 100% !important
+    }
+    
+    .grid-cols-4 {
+        grid-template-columns: 1fr !important
+    }
+
+    /* 실시간 랭킹 언론사 헤더 수정 */
+    .flex.items-center.gap-3 {
+        display: flex !important;
+        align-items: center !important;
+        gap: 1.5rem !important;
+        padding: 0.5rem !important;
+        margin: -0.5rem -0.5rem 0.5rem -0.5rem !important
+    }
+
+    .w-10.h-10 {
+        width: 2rem !important;
+        height: 2rem !important;
+        flex-shrink: 0 !important
+    }
+
+    .w-8.h-8 {
+        width: 1.5rem !important;
+        height: 1.5rem !important
+    }
+
+    .w-16.h-16 {
+        width: 2rem !important;
+        height: 2rem !important
+    }
+
+    /* 나머지 기존 스타일 유지 */
+    .max-w-full {
+        max-width: 100vw !important;
+        margin-left: calc(-50vw + 50%) !important;
+        margin-right: calc(-50vw + 50%) !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important
+    }
+    
+    .bg-white {
+        border-radius: 0.5rem !important;
+        margin-left: -1rem !important;
+        margin-right: -1rem !important;
+        width: calc(100% + 2rem) !important
+    }
+    
+    #analysisResults {
+        margin-top: 1rem !important;
+        margin-left: -1rem !important;
+        margin-right: -1rem !important;
+        width: calc(100% + 2rem) !important
+    }
+    
+    .bg-gray-50 {
+        border-radius: 0.375rem !important;
+        padding: 1rem !important
+    }
+    
+    .space-y-2 {
+        padding: 0 1rem !important
+    }
+}
+
+</style>
 {% endblock extra_js %}
