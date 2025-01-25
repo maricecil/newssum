@@ -1,0 +1,50 @@
+version: '3.8'
+name: news-service
+
+services:
+  web:
+    build: .
+    command: >
+      bash -c "python manage.py migrate &&
+               python manage.py collectstatic --noinput &&
+               gunicorn newsdocs.wsgi:application --bind 0.0.0.0:8000
+               --timeout 300
+               --workers 3
+               --threads 3
+               --max-requests 1000
+               --max-requests-jitter 50"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    volumes:
+      - .:/app
+      - static_volume:/app/static
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=newsdocs.settings
+      - PYTHONUNBUFFERED=1
+      - CHROME_BIN=/usr/bin/chromium
+      - CHROMEDRIVER_PATH=/usr/bin/chromedriver
+      - PYTHONPATH=/app
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7.2
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  static_volume:
+  media_volume: 
