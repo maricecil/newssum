@@ -526,12 +526,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                 elements.analyzeBtn.addEventListener('click', async function() {
                     if (window.isAnalyzing) return;
 
-                    if (window.selectedCompanyList.size === 0 && window.selectedKeywordList.size === 0) {
-                        alert('분석할 언론사나 키워드를 선택해주세요.');
-                        return;
-                    }
-
                     try {
+                        // 1. 입력 검증 강화
+                        if (window.selectedCompanyList.size === 0 && window.selectedKeywordList.size === 0) {
+                            alert('분석할 언론사나 키워드를 선택해주세요.');
+                            return;
+                        }
+
+                        // 2. 상태 관리 개선
                         window.isAnalyzing = true;
                         elements.analyzeBtn.disabled = true;
                         
@@ -540,11 +542,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                             elements.analyzeBtn.classList.add('opacity-50', 'cursor-not-allowed');
                         }
 
+                        // 3. 요청 데이터 구조화
                         const requestData = {
                             companies: Array.from(window.selectedCompanyList),
-                            keywords: Array.from(window.selectedKeywordList)
+                            keywords: Array.from(window.selectedKeywordList),
+                            timestamp: new Date().toISOString()  // 캐시 충돌 방지
                         };
 
+                        // 4. 에러 처리 개선
                         const response = await fetch('/news/analyze/trends/', {
                             method: 'POST',
                             headers: {
@@ -554,22 +559,32 @@ document.addEventListener('DOMContentLoaded', async function() {
                             body: JSON.stringify(requestData)
                         });
                         
+                        // 5. 응답 상태 코드 처리 개선
                         if (!response.ok) {
-                            throw new Error(`서버 응답 오류: ${response.status}`);
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(errorData.message || `서버 응답 오류: ${response.status}`);
                         }
 
                         const data = await response.json();
                         
+                        // 6. 성공 처리 개선
                         if (data.success) {
                             const results = document.getElementById('analysisResults');
                             if (!results) {
                                 throw new Error('분석 결과를 표시할 요소를 찾을 수 없습니다.');
                             }
 
-                            results.classList.remove('hidden');
+                            // 7. UI 업데이트 최적화
+                            results.style.display = 'none';  // 변경 전 숨김
                             updateAnalysisResults(data);
+                            results.classList.remove('hidden');
                             results.style.display = 'block';
-                            results.scrollIntoView({ behavior: 'smooth' });
+                            
+                            // 8. 부드러운 스크롤 처리
+                            results.scrollIntoView({ 
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
                         } else {
                             throw new Error(data.error || '분석 결과를 가져오는데 실패했습니다.');
                         }
@@ -578,6 +593,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         console.error('분석 중 상세 오류:', error);
                         alert(`분석 중 오류가 발생했습니다: ${error.message}`);
                     } finally {
+                        // 9. 상태 초기화 보장
                         window.isAnalyzing = false;
                         elements.analyzeBtn.disabled = false;
                         

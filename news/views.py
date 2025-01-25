@@ -42,7 +42,7 @@ def atomic_cache(func):
 def news_list(request):
     print("=== 뉴스 목록 조회 시작 ===")  # 일단 print로 확인
     # 캐시 타임아웃을 settings에서 가져오기
-    CACHE_TIMEOUT = getattr(settings, 'CACHE_TIMEOUT', 1800)  # 기본값 30분
+    CACHE_TIMEOUT = getattr(settings, 'CACHE_TIMEOUT', 3600)  # 기본값 30분
     
     # 캐시된 데이터 확인 시 타임아웃도 함께 체크
     cached_data = cache.get('news_data')
@@ -440,7 +440,7 @@ def analyze_trends(request):
         
         # 분석 결과 캐싱 (30분)
         cache_key = f"analysis_{analysis_type}_{'-'.join(selected_companies)}_{'-'.join(selected_keywords)}"
-        cache.set(cache_key, basic_analysis, timeout=1800)
+        cache.set(cache_key, basic_analysis, timeout=3600)
         
         return JsonResponse({
             'success': True,
