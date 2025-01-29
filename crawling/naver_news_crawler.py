@@ -86,30 +86,30 @@ class NaverNewsCrawler:
             
             # 페이지 로딩 대기 및 CSS 선택자 수정
             wait = WebDriverWait(driver, 10)
-            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[href*="/article/"]')))
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.press_ranking_list')))
             
-            # HTML 파싱
             soup = BeautifulSoup(driver.page_source, 'html.parser')
             news_items = []
             
-            # 뉴스 아이템 추출 (CSS 선택자 수정)
-            articles = soup.select('a[href*="/article/"]')[:10]  # 상위 10개만 추출
+            # 개선된 크롤링 방식 적용
+            ranking_list = soup.select_one('.press_ranking_list')
+            if not ranking_list:
+                logger.error("랭킹 리스트를 찾을 수 없습니다.")
+                return None
+            
+            articles = ranking_list.select('li.as_thumb')[:10]  # 상위 10개만
             
             for idx, article in enumerate(articles, 1):
                 try:
-                    # 순위 요소 찾기
-                    rank_num = article.select_one('.list_ranking_num')
-                    if rank_num:
-                        rank_num.decompose()  # 순위 텍스트 제거
+                    # 기존 데이터 구조 유지하면서 개선된 크롤링
+                    link = article.select_one('a._es_pc_link')
+                    title_elem = article.select_one('strong.list_title')
                     
-                    title = article.get_text(strip=True)
-                    url = article['href']
-                    
-                    # 제목에서 조회수 부분 제거
-                    if '조회수' in title:
-                        title = title.split('조회수')[0].strip()
-                            
-                    if title and url:
+                    if title_elem and link:
+                        title = title_elem.get_text(strip=True)
+                        url = link['href']
+                        
+                        # 기존 데이터 구조 유지
                         news_items.append({
                             'company_code': company_code,
                             'company_name': self.news_companies[company_code],
@@ -118,6 +118,7 @@ class NaverNewsCrawler:
                             'rank': idx,
                             'crawled_at': datetime.now()
                         })
+                        
                 except Exception as e:
                     logger.error(f"기사 파싱 중 오류 발생: {str(e)}")
                     continue
