@@ -11,7 +11,7 @@
             <!-- 필터링 결과 섹션 -->
             <div class="flex gap-8">
                 <!-- 기존 필터 컨트롤 섹션 -->
-                <div class="w-1/2 mb-8">
+                <div class="w-full mb-8">
                     <h1 class="text-2xl font-bold mb-4">
                         주요 기사 분석
                         <span class="text-gray-500" id="filteredCount"></span>
@@ -117,9 +117,10 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
             <!-- 하단 2단 그리드 섹션 -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <!-- 언론사별 주요 기사 섹션 -->
                 <div class="w-full">
                     <h1 class="text-2xl font-bold mb-4">
@@ -278,10 +279,9 @@
         </style>
 
         <div class="mb-3 news-layout">
-            <!-- 실시간 뉴스 랭킹 (메인) -->
-            <div class="flex justify-between gap-8">
+            <div class="flex gap-6">
                 <!-- 실시간 주요 뉴스 섹션 -->
-                <div class="flex-1">
+                <div class="flex-[2.5]">
                     <div class="flex items-center gap-2 mb-2">
                         <h1 class="text-xl font-bold">실시간 주요 뉴스</h1>
                         <span class="text-sm text-gray-500">
@@ -300,21 +300,19 @@
                     </div>
                 </div>
 
-                <!-- 주요 키워드 섹션 -->
-                <div class="flex-1">
+                <!-- 키워드 랭킹 섹션 -->
+                <div class="w-[32rem]">
                     <div class="flex justify-between items-center mb-2">
                         <h1 class="text-xl font-bold">키워드 랭킹</h1>
                     </div>
-
                     <div class="grid gap-1">
                         {% for keyword, count, keyword_group in keyword_rankings %}
                         <div class="bg-white rounded shadow-sm p-2">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2 w-32">
+                            <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-1 w-[7rem] shrink-0">
                                     <span class="text-base font-bold w-4">{{ forloop.counter }}</span>
                                     <a href="{% url 'news:keyword_articles' keyword=keyword %}" 
-                                       class="text-blue-600 hover:text-blue-800 text-base font-medium 
-                                              transition-colors flex items-center gap-1 whitespace-nowrap">
+                                       class="text-blue-600 hover:text-blue-800 text-base font-medium transition-colors flex items-center gap-0.5">
                                         {{ keyword }}
                                         <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -322,7 +320,7 @@
                                     </a>
                                 </div>
                                 <!-- 슬라이더 컨테이너 -->
-                                <div class="relative w-full md:w-[36rem] ml-1 overflow-hidden h-6">
+                                <div class="relative w-[22rem] overflow-hidden h-6">
                                     <div id="keywordSlider{{ forloop.counter }}" class="flex flex-col transition-all duration-700">
                                         {% with shown_titles="" %}
                                             {% for item in news_items %}
@@ -331,8 +329,8 @@
                                                     {% if not is_shown %}
                                                         <div class="flex-shrink-0 h-6">
                                                             <a href="{{ item.url }}" target="_blank" 
-                                                               class="text-sm hover:text-blue-600 truncate block">
-                                                                <span class="text-gray-600">{{ item.title }}</span>
+                                                               class="text-sm text-gray-600 hover:text-blue-600 truncate block">
+                                                                {{ item.title }}
                                                             </a>
                                                         </div>
                                                         {% with shown_titles=shown_titles|add:item.title|add:"|||" %}{% endwith %}
