@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -19,34 +20,48 @@
     <nav class="bg-white shadow-md sticky top-0 z-40 border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
             <div class="flex justify-between h-12 md:h-16">
+                <!-- 로고 영역 -->
+                <div class="flex items-center pr-3 md:pr-6">
+                    <a href="{% url 'news:news_list' %}" class="flex items-center gap-4" aria-label="홈으로 이동">
+                        <img src="{% static 'images/logos/로고1.png' %}" 
+                             alt="NEWSSUM" 
+                             class="h-12 md:h-16 w-auto"
+                        >
+                        <span class="text-gray-800 text-xs md:text-base font-bold hidden md:block whitespace-nowrap">
+                            편향없는 분석, 조화로운 요약
+                        </span>
+                    </a>
+                </div>
+                
+                <!-- 네비게이션 메뉴 -->
                 <div class="flex w-full md:w-auto overflow-x-auto scrollbar-hide">
-                    <div class="flex items-center space-x-3 md:space-x-8 whitespace-nowrap px-1">
+                    <div class="flex items-center space-x-1 md:space-x-4 whitespace-nowrap px-1">
                         <!-- 실시간 뉴스 -->
                         <a href="{% url 'news:news_list' %}" 
                            class="group relative flex items-center transition-colors duration-200 ease-in-out"
                            aria-label="실시간 뉴스 랭킹 페이지로 이동">
-                            <span class="text-gray-700 group-hover:text-blue-600 px-2 md:px-3 py-2 text-sm md:text-base font-medium">
+                            <span class="text-gray-700 group-hover:text-blue-600 px-2 py-2 text-sm md:text-base font-medium">
                                 <span class="md:hidden">실시간 뉴스</span>
                                 <span class="hidden md:inline">실시간 뉴스랭킹</span>
                             </span>
                             <span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
                         </a>
-                        <div class="h-4 md:h-6 w-px bg-gray-200" role="separator"></div>
+                        <div class="h-4 w-px bg-gray-200" role="separator"></div>
                         <!-- 기사 분석 -->
                         <a href="{% url 'news:top_articles' %}" 
                            class="group relative flex items-center transition-colors duration-200 ease-in-out"
                            aria-label="기사 분석 페이지로 이동">
-                            <span class="text-gray-700 group-hover:text-blue-600 px-2 md:px-3 py-2 text-sm md:text-base font-medium">
+                            <span class="text-gray-700 group-hover:text-blue-600 px-2 py-2 text-sm md:text-base font-medium">
                                 기사 분석
                             </span>
                             <span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
                         </a>
-                        <div class="h-4 md:h-6 w-px bg-gray-200" role="separator"></div>
+                        <div class="h-4 w-px bg-gray-200" role="separator"></div>
                         <!-- 기사 요약 -->
                         <a href="{% url 'news:article_summary' %}" 
                            class="group relative flex items-center transition-colors duration-200 ease-in-out"
                            aria-label="기사 요약 페이지로 이동">
-                            <span class="text-gray-700 group-hover:text-blue-600 px-2 md:px-3 py-2 text-sm md:text-base font-medium">
+                            <span class="text-gray-700 group-hover:text-blue-600 px-2 py-2 text-sm md:text-base font-medium">
                                 기사 요약
                             </span>
                             <span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
@@ -71,12 +86,19 @@
         id="scroll-top"
         aria-label="페이지 상단으로 이동"
     >
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 
-        
-         24">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
         </svg>
     </button>
+
+    <!-- Footer 추가 -->
+    <footer class="bg-white border-t border-gray-200 py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-gray-500 text-sm">
+                이 프로젝트는 2025 스파르타 내일배움캠프의 지원을 받아 제작되었습니다.
+            </p>
+        </div>
+    </footer>
 
     <script>
         // 스크롤 탑 버튼 표시/숨김 처리
