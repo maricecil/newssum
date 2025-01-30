@@ -19,6 +19,8 @@ import tempfile
 import os
 import shutil
 import platform
+import json
+from pathlib import Path
 
 
 logger = logging.getLogger('crawling')  # Django 설정의 'crawling' 로거 사용
@@ -38,7 +40,56 @@ class NaverNewsCrawler:
             '469': '한국일보'
         }
         self.CACHE_TIMEOUT = 1800  # 30분
+        # 백업 파일 경로 설정
+        self.backup_dir = Path('cache_backup')
+        self.backup_file = self.backup_dir / 'news_cache_backup.json'
+        self._ensure_backup_dir()
         
+    def _ensure_backup_dir(self):
+        """백업 디렉토리 생성"""
+        try:
+            self.backup_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            logger.error(f"백업 디렉토리 생성 실패: {str(e)}")
+
+    def backup_cache(self, data):
+        """캐시 데이터를 파일로 백업"""
+        try:
+            # datetime 객체를 문자열로 변환
+            serializable_data = self._prepare_for_json(data)
+            
+            with open(self.backup_file, 'w', encoding='utf-8') as f:
+                json.dump(serializable_data, f, ensure_ascii=False)
+            logger.info("캐시 백업 완료")
+        except Exception as e:
+            logger.error(f"캐시 백업 실패: {str(e)}")
+
+    def _prepare_for_json(self, data):
+        """JSON 직렬화를 위해 데이터 전처리"""
+        if isinstance(data, dict):
+            return {k: self._prepare_for_json(v) for k, v in data.items()}
+        elif isinstance(data, (list, tuple, set)):
+            return [self._prepare_for_json(item) for item in data]
+        elif isinstance(data, (pd.Timestamp, datetime)):
+            return data.isoformat()
+        elif hasattr(data, 'tolist'):  # numpy array 처리
+            return data.tolist()
+        elif hasattr(data, '__dict__'):  # 객체 처리
+            return self._prepare_for_json(data.__dict__)
+        return data
+
+    def restore_from_backup(self):
+        """백업 파일에서 데이터 복구"""
+        try:
+            if self.backup_file.exists():
+                with open(self.backup_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    logger.info("백업에서 데이터 복구 완료")
+                    return data
+        except Exception as e:
+            logger.error(f"백업 복구 실패: {str(e)}")
+        return None
+
     def setup_driver(self):
         chrome_options = Options()
         chrome_options.add_argument('--headless=new')
@@ -175,23 +226,45 @@ class NaverNewsCrawler:
     def crawl_all_companies(self):
         driver = None
         try:
-            # 캐시 확인
+            # 캐시 확인 및 유효성 검사 수정
             cached_data = cache.get('news_data')
             if cached_data:
                 last_crawled = cached_data.get('crawled_time')
-                if last_crawled and (timezone.now() - last_crawled).seconds < self.CACHE_TIMEOUT:
-                    logger.info("캐시된 데이터 사용")
-                    return pd.DataFrame(cached_data.get('news_items', []))
-            
+                if last_crawled:
+                    # timezone-aware 비교를 위해 변환
+                    if isinstance(last_crawled, str):
+                        last_crawled = timezone.datetime.fromisoformat(last_crawled)
+                    time_diff = (timezone.now() - last_crawled).total_seconds()
+                    
+                    # 캐시가 만료되었으면 None 처리
+                    if time_diff >= self.CACHE_TIMEOUT:
+                        cache.delete('news_data')
+                        cached_data = None
+                    else:
+                        logger.info("캐시된 데이터 사용")
+                        return pd.DataFrame(cached_data.get('news_items', []))
+
             # 크롤링 락 확인
             if cache.get('crawling_in_progress'):
-                logger.info("다른 크롤링이 진행 중, 이전 캐시 사용")
-                return pd.DataFrame(cached_data.get('news_items', [])) if cached_data else pd.DataFrame([])
-            
-            # 크롤링 락 설정
-            cache.set('crawling_in_progress', True, timeout=300)  # 5분 타임아웃
-            
+                logger.info("다른 크롤링이 진행 중")
+                if cached_data:
+                    logger.info("이전 캐시 데이터 사용")
+                    return pd.DataFrame(cached_data.get('news_items', []))
+                # 캐시가 없는 경우 백업에서 복구 시도
+                backup_data = self.restore_from_backup()
+                if backup_data:
+                    logger.info("백업 데이터 사용")
+                    return pd.DataFrame(backup_data.get('news_items', []))
+                return pd.DataFrame([])
+
+            # 크롤링 락 설정 (타임아웃 시간 조정)
+            cache.set('crawling_in_progress', True, timeout=600)  # 10분으로 연장
+
             try:
+                # 현재 캐시 백업
+                if cached_data:
+                    self.backup_cache(cached_data)
+
                 # 새로운 크롤링 시작
                 logger.info("새로운 크롤링 시작")
                 all_news = []
@@ -205,24 +278,40 @@ class NaverNewsCrawler:
                     except Exception as e:
                         logger.error(f"신문사 크롤링 실패 ({code}): {str(e)}")
                         continue
-                    
+
                 if all_news:
-                    df = pd.DataFrame(all_news)
-                    cache.set('news_data', {
+                    new_cache_data = {
                         'news_items': all_news,
                         'crawled_time': timezone.now()
-                    }, timeout=self.CACHE_TIMEOUT)
-                    return df
-                    
+                    }
+                    # 새 데이터 캐시에 저장 전 기존 캐시 삭제
+                    cache.delete('news_data')
+                    cache.set('news_data', new_cache_data, timeout=self.CACHE_TIMEOUT)
+                    # 새 데이터 백업
+                    self.backup_cache(new_cache_data)
+                    return pd.DataFrame(all_news)
+
+                # 크롤링 실패 시 백업 데이터 사용
+                backup_data = self.restore_from_backup()
+                if backup_data:
+                    return pd.DataFrame(backup_data.get('news_items', []))
                 return pd.DataFrame([])
-                
+
             finally:
                 # 크롤링 락 해제
                 cache.delete('crawling_in_progress')
-            
+
         except Exception as e:
             logger.error(f"크롤링 중 오류 발생: {str(e)}")
+            # 에러 발생 시 백업 데이터 사용
+            backup_data = self.restore_from_backup()
+            if backup_data:
+                return pd.DataFrame(backup_data.get('news_items', []))
             return pd.DataFrame([])
+
+        finally:
+            if driver:
+                driver.quit()
     
     def crawl_content(self, url):
         driver = None
