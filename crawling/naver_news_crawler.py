@@ -226,13 +226,23 @@ class NaverNewsCrawler:
     def crawl_all_companies(self):
         driver = None
         try:
-            # 캐시 확인
+            # 캐시 확인 및 유효성 검사 수정
             cached_data = cache.get('news_data')
             if cached_data:
                 last_crawled = cached_data.get('crawled_time')
-                if last_crawled and (timezone.now() - last_crawled).seconds < self.CACHE_TIMEOUT:
-                    logger.info("캐시된 데이터 사용")
-                    return pd.DataFrame(cached_data.get('news_items', []))
+                if last_crawled:
+                    # timezone-aware 비교를 위해 변환
+                    if isinstance(last_crawled, str):
+                        last_crawled = timezone.datetime.fromisoformat(last_crawled)
+                    time_diff = (timezone.now() - last_crawled).total_seconds()
+                    
+                    # 캐시가 만료되었으면 None 처리
+                    if time_diff >= self.CACHE_TIMEOUT:
+                        cache.delete('news_data')
+                        cached_data = None
+                    else:
+                        logger.info("캐시된 데이터 사용")
+                        return pd.DataFrame(cached_data.get('news_items', []))
 
             # 크롤링 락 확인
             if cache.get('crawling_in_progress'):
@@ -247,8 +257,8 @@ class NaverNewsCrawler:
                     return pd.DataFrame(backup_data.get('news_items', []))
                 return pd.DataFrame([])
 
-            # 크롤링 락 설정
-            cache.set('crawling_in_progress', True, timeout=300)  # 5분 타임아웃
+            # 크롤링 락 설정 (타임아웃 시간 조정)
+            cache.set('crawling_in_progress', True, timeout=600)  # 10분으로 연장
 
             try:
                 # 현재 캐시 백업
@@ -274,7 +284,8 @@ class NaverNewsCrawler:
                         'news_items': all_news,
                         'crawled_time': timezone.now()
                     }
-                    # 새 데이터 캐시에 저장
+                    # 새 데이터 캐시에 저장 전 기존 캐시 삭제
+                    cache.delete('news_data')
                     cache.set('news_data', new_cache_data, timeout=self.CACHE_TIMEOUT)
                     # 새 데이터 백업
                     self.backup_cache(new_cache_data)
