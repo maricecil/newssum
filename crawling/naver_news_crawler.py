@@ -5,23 +5,17 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime
 import time
 import logging
-from news.models import Article, NewsSummary
 from django.core.cache import cache
 from django.utils import timezone
-import tempfile
-import os
-import shutil
 import platform
 import json
 from pathlib import Path
-
 
 logger = logging.getLogger('crawling')  # Django 설정의 'crawling' 로거 사용
 
