@@ -129,6 +129,9 @@
 
 - **TailwindCSS**: 유틸리티 퍼스트 CSS 프레임워크로 반응형 디자인과 다크모드를 쉽게 구현할 수 있어 선택하게 되었습니다.
 
+![서비스 아키텍처 최종](https://github.com/user-attachments/assets/475247b0-b2e9-44fa-884d-c3fdc1939b65)
+
+
 ## **4. 배포 및 운영**
 ### **4.1 필요 환경**
 - Python 3.10+
