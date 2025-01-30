@@ -2,25 +2,16 @@ from django.core.cache import cache
 from django.shortcuts import render, redirect
 from crawling.naver_news_crawler import NaverNewsCrawler
 from .utils import extract_keywords, analyze_keywords_with_llm_sync
-from datetime import datetime
 from django.conf import settings
-from django.views.decorators.cache import cache_page
 from functools import wraps
 import threading
-import re
-from django.db.models import Q
-from .models import Article, Keyword, NewsSummary
-from django.db.models import Count
+from .models import Article, NewsSummary
 from django.utils import timezone
 import logging
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 import json
-from openai import OpenAI
-from asgiref.sync import sync_to_async, async_to_sync
-from .agents.crew import NewsAnalysisCrew, summarize_article
-from langchain_community.llms import OpenAI
-from crewai.crew import Crew
+from .agents.crew import summarize_article
 from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage
 from django.utils import timezone
@@ -54,14 +45,12 @@ def news_list(request):
                     last_crawled = timezone.datetime.fromisoformat(last_crawled)
                 time_diff = (timezone.now() - last_crawled).total_seconds()
                 
-                # 캐시가 만료되었으면 삭제 후 새로운 크롤링 시도
+                # 캐시가 만료되었으면 임시 캐시에 복사 후 크롤링 시도
                 if time_diff >= CACHE_TIMEOUT:
                     logger.info("캐시 만료 - 새로운 크롤링 시도")
+                    # 기존 캐시를 임시로 보관
+                    cache.set('news_data_temp', cached_data, timeout=600)  # 10분 유효
                     cache.delete('news_data')
-                    cache.delete('news_rankings')
-                    cache.delete('previous_keywords')
-                    cache.delete('crawled_time')
-                    cache.delete('last_update')
                     cached_data = None
                 else:
                     logger.info("유효한 캐시 데이터 사용")
@@ -95,7 +84,13 @@ def news_list(request):
             
             return render(request, 'news/news_list.html', context)
             
-        # 6. 크롤링 실패 시 백업 데이터 사용
+        # 크롤링 실패 시 임시 캐시 확인
+        temp_data = cache.get('news_data_temp')
+        if temp_data:
+            logger.info("임시 캐시 데이터 사용")
+            return render(request, 'news/news_list.html', temp_data)
+            
+        # 임시 캐시도 없으면 백업 데이터 사용
         backup_data = crawler.restore_from_backup()
         if backup_data and backup_data.get('context'):
             logger.info("백업 데이터 사용")
@@ -236,15 +231,6 @@ def top_articles(request):
         if related_articles:
             keyword_articles[keyword] = related_articles
     
-    # CrewAI 분석 실행
-    top_ranked_articles = []
-    for articles in keyword_articles.values():
-        if articles:  # 각 키워드당 첫 번째 기사만 선택
-            top_ranked_articles.append(articles[0])
-    
-    crew = NewsAnalysisCrew()
-    crew_analysis = crew.run_analysis(top_ranked_articles)
-    
     # 전체 기사 수 계산
     total_articles = sum(len(articles) for articles in keyword_articles.values())
     
@@ -258,8 +244,7 @@ def top_articles(request):
         'keyword_rankings': keyword_rankings,
         'keyword_articles': keyword_articles,
         'total_keyword_articles': total_articles,
-        'crawled_time': cached_data.get('crawled_time'),
-        'crew_analysis': crew_analysis  # CrewAI 분석 결과 추가
+        'crawled_time': cached_data.get('crawled_time')
     }
     
     return render(request, 'news/news_list.html', context)
