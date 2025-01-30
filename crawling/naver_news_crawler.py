@@ -103,16 +103,14 @@ class NaverNewsCrawler:
                     link = article.select_one('a._es_pc_link, a.list_img')
                     title_elem = article.select_one('strong.list_title, strong.list_text')
                     
-                    # 이미지 요소 찾기 (여러 클래스 패턴 고려)
-                    img_elem = article.select_one('img.list_img, img.thumb')
+                    # 이미지 요소 찾기
+                    img_container = article.select_one('div.list_img')
                     image_url = None
-                    if img_elem and 'src' in img_elem.attrs:
-                        image_url = img_elem['src']
-                        # 이미지 URL이 상대 경로인 경우 처리
-                        if not image_url.startswith('http'):
-                            image_url = f"https:{image_url}"
-                        # 이미지 URL에서 크기 파라미터 조정 (더 큰 이미지로)
-                        image_url = image_url.replace('type=nf106_72', 'type=nf240_150')
+                    if img_container:
+                        img_elem = img_container.select_one('img')
+                        if img_elem and 'src' in img_elem.attrs:
+                            image_url = img_elem['src']
+                            logger.info(f"Found image URL: {image_url}")  # 디버깅용 로그
                     
                     if title_elem and link:
                         title = title_elem.get_text(strip=True)
