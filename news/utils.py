@@ -730,17 +730,7 @@ async def analyze_keywords_with_llm(keywords_with_counts, titles, max_tokens=300
     }의 리스트
     """
     try:
-        # 1. 기본 키워드 데이터 준비
-        # - 상위 10개 키워드와 출현 빈도 (예: "윤석열 (15회)")
-        keyword_freq = '\n'.join([f"- {k} ({c}회)" for k, c, _ in keywords_with_counts[:10]])
-        
-        # - 상위 5개 키워드와 그들의 연관 키워드 그룹 (예: "윤석열: 대통령, 검찰총장, 정부")
-        keyword_groups = '\n'.join([
-            f"- {k}: {', '.join(sorted(g))}" 
-            for k, _, g in keywords_with_counts[:5]
-        ])
-        
-        # - 분석할 주요 뉴스 제목 10개
+        # 1. 분석할 주요 뉴스 제목 10개
         formatted_titles = '\n'.join([f"- {t}" for t in titles[:10]])
         
         # 2. 키워드 관계 분석을 위한 변수 초기화
@@ -813,23 +803,6 @@ async def analyze_keywords_with_llm(keywords_with_counts, titles, max_tokens=300
             f"- {k}" for k in sorted(independent_keywords)[:5]
         ])
         
-        # 5-4. 주요 복합 키워드 목록 (길이순 상위 5개)
-        long_keywords_fmt = '\n'.join([
-            f"- {k}" for k in sorted(set(long_keywords), key=len, reverse=True)[:5]
-        ])
-
-        # 5-5. 동시 출현 빈도 TOP5
-        # - 각 키워드별로 가장 자주 함께 등장한 다른 키워드들을 보여줌
-        # - 전체 동시 출현 빈도가 높은 키워드 순으로 정렬
-        cooccurrence_freq = '\n'.join([
-            f"- {k}: " + ', '.join([
-                f"{related_k}({count}회)" 
-                for related_k, count in sorted(v.items(), key=lambda x: x[1], reverse=True)[:5]
-            ])
-            for k, v in sorted(cooccurrence.items(), 
-                             key=lambda x: sum(x[1].values()), 
-                             reverse=True)[:5]
-        ])
         # 언론사별 통계 준비 
         press_stats = {}
         for title_data in titles:
@@ -856,15 +829,6 @@ async def analyze_keywords_with_llm(keywords_with_counts, titles, max_tokens=300
                 for keyword, _, _ in keywords_with_counts:
                     if keyword in title_text:
                         press_stats[press_name]['keywords'][keyword] += 1
-
-        # GPT 프롬프트에 언론사별 통계 추가
-        press_analysis = '\n'.join([
-            f"- {press}: {stats['count']}건, 주요키워드: " + 
-            ', '.join(f"{k}({v}회)" for k, v in stats['keywords'].most_common(3))
-            for press, stats in sorted(press_stats.items(), 
-                                    key=lambda x: x[1]['count'], 
-                                    reverse=True)
-        ])
 
         # 언론사별 통계 포맷팅
         press_stats_fmt = '\n'.join([
