@@ -283,7 +283,7 @@
                 <!-- 실시간 주요 뉴스 섹션 -->
                 <div class="bg-white rounded-lg shadow p-4">
                     <div class="flex items-center gap-2 mb-4">
-                        <h2 class="text-lg font-bold">실시간 주요 뉴스</h2>
+                        <h2 class="text-xl font-bold">실시간 주요 뉴스</h2>
                         <span class="text-sm text-gray-500">
                             ({{ crawled_time|date:"Y-m-d H:i" }} 기준)
                         </span>
@@ -315,9 +315,9 @@
                     {% for company in news_by_company %}
                         <div class="company-news" id="news-{{ company.grouper }}" {% if not forloop.first %}style="display: none;"{% endif %}>
                             {% for item in company.list %}
-                                <div class="flex gap-4 {% if not forloop.last %}mb-4 pb-4 border-b{% endif %}">
+                                <div class="flex flex-col md:flex-row gap-4 {% if not forloop.last %}mb-4 pb-4 border-b{% endif %}">
                                     {% if item.image_url %}
-                                        <div class="w-[336px] h-[224px] shrink-0 bg-gray-100 rounded overflow-hidden">
+                                        <div class="w-full md:w-[336px] h-[200px] md:h-[224px] shrink-0 bg-gray-100 rounded overflow-hidden">
                                             <img src="{{ item.image_url }}" 
                                                  alt="{{ item.title }}"
                                                  class="w-full h-full object-cover">
@@ -344,7 +344,7 @@
                 </div>
 
                 <!-- 키워드 랭킹 섹션 -->
-                <div class="w-[32rem]">
+                <div class="w-full md:w-[32rem]">
                     <div class="flex justify-between items-center mb-2">
                         <h1 class="text-xl font-bold">키워드 랭킹</h1>
                     </div>
@@ -352,7 +352,7 @@
                         {% for keyword, count, keyword_group in keyword_rankings %}
                         <div class="bg-white rounded shadow-sm p-2">
                             <div class="flex items-center gap-2">
-                                <div class="flex items-center gap-1 w-[7rem] shrink-0">
+                                <div class="flex items-center gap-1 shrink-0">
                                     <span class="text-base font-bold w-4">{{ forloop.counter }}</span>
                                     <a href="{% url 'news:keyword_articles' keyword=keyword %}" 
                                        class="text-blue-600 hover:text-blue-800 text-base font-medium transition-colors flex items-center gap-0.5">
@@ -363,7 +363,7 @@
                                     </a>
                                 </div>
                                 <!-- 슬라이더 컨테이너 -->
-                                <div class="relative w-[22rem] overflow-hidden h-6">
+                                <div class="relative overflow-hidden h-6 flex-1 md:w-[22rem]">
                                     <div id="keywordSlider{{ forloop.counter }}" class="flex flex-col transition-all duration-700">
                                         {% with shown_titles="" %}
                                             {% for item in news_items %}
@@ -394,7 +394,7 @@
         <!-- 실시간 랭킹 섹션 -->
         <div class="mt-8">
             <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold">실시간 랭킹</h1>
+                <h1 class="text-xl font-bold">실시간 랭킹</h1>
             </div>
             
             {% regroup news_items by company_name as news_by_company %}
@@ -1094,6 +1094,11 @@ const SliderManager = {
     
     .space-y-2 {
         padding: 0 1rem !important
+    }
+
+    /* 모바일에서만 적용되는 스타일 */
+    .relative.overflow-hidden.h-6.flex-1 {
+        max-width: calc(100vw - 150px);  /* 키워드와 순위를 제외한 나머지 공간 */
     }
 }
 
