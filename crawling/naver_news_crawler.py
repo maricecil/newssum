@@ -84,38 +84,45 @@ class NaverNewsCrawler:
             driver.get(url)
             time.sleep(3)
             
-            # 페이지 로딩 대기 및 CSS 선택자 수정
             wait = WebDriverWait(driver, 10)
             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.press_ranking_list')))
             
             soup = BeautifulSoup(driver.page_source, 'html.parser')
             news_items = []
             
-            # 개선된 크롤링 방식 적용
             ranking_list = soup.select_one('.press_ranking_list')
             if not ranking_list:
                 logger.error("랭킹 리스트를 찾을 수 없습니다.")
                 return None
             
-            articles = ranking_list.select('li.as_thumb')[:10]  # 상위 10개만
+            articles = ranking_list.select('li')[:10]
             
             for idx, article in enumerate(articles, 1):
                 try:
-                    # 기존 데이터 구조 유지하면서 개선된 크롤링
-                    link = article.select_one('a._es_pc_link')
-                    title_elem = article.select_one('strong.list_title')
+                    # 이미지가 있는 기사와 없는 기사 모두 처리
+                    link = article.select_one('a._es_pc_link, a.list_img')
+                    title_elem = article.select_one('strong.list_title, strong.list_text')
+                    
+                    # 이미지 요소 찾기
+                    img_container = article.select_one('div.list_img')
+                    image_url = None
+                    if img_container:
+                        img_elem = img_container.select_one('img')
+                        if img_elem and 'src' in img_elem.attrs:
+                            image_url = img_elem['src']
+                            logger.info(f"Found image URL: {image_url}")  # 디버깅용 로그
                     
                     if title_elem and link:
                         title = title_elem.get_text(strip=True)
                         url = link['href']
                         
-                        # 기존 데이터 구조 유지
                         news_items.append({
                             'company_code': company_code,
                             'company_name': self.news_companies[company_code],
                             'title': title,
                             'url': url if url.startswith('http') else f"https://n.news.naver.com{url}",
                             'rank': idx,
+                            'image_url': image_url,  # 이미지 URL 추가
                             'crawled_at': datetime.now()
                         })
                         
