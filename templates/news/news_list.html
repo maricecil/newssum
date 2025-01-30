@@ -288,12 +288,26 @@
                             ({{ crawled_time|date:"Y-m-d H:i" }} 기준)
                         </span>
                     </div>
-                    <div class="grid gap-1">
+                    <div class="grid gap-2">
                         {% for item in daily_rankings %}
                         <div class="bg-white rounded shadow-sm p-2">
-                            <div class="flex flex-col gap-1">
-                                <span class="text-base font-bold text-blue-600">{{ item.company_name }}</span>
-                                <a href="{{ item.url }}" target="_blank" class="text-base hover:text-blue-600">{{ item.title }}</a>
+                            <div class="flex gap-3">
+                                {% if item.image_url %}
+                                <div class="shrink-0">
+                                    <img src="{{ item.image_url }}" alt="{{ item.title }}" 
+                                         class="w-24 h-16 object-cover rounded"
+                                         onerror="this.style.display='none'">
+                                </div>
+                                {% endif %}
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-sm text-blue-600">{{ item.company_name }}</span>
+                                        <a href="{{ item.url }}" target="_blank" 
+                                           class="text-base hover:text-blue-600 line-clamp-2">
+                                            {{ item.title }}
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
