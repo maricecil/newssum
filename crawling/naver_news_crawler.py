@@ -124,7 +124,7 @@ class NaverNewsCrawler:
                             time.sleep(2)
                             
                             try:
-                                # 본문 이미지 찾기 (추가)
+                                # 본문 이미지 찾기 (기존 코드 유지)
                                 try:
                                     main_img = driver.find_element(By.CSS_SELECTOR, '.end_photo_org img')
                                     if main_img:
@@ -132,16 +132,17 @@ class NaverNewsCrawler:
                                         if high_quality_url:
                                             image_url = high_quality_url
                                 except:
-                                    pass  # 이미지를 찾지 못하면 기존 이미지 URL 유지
+                                    pass
                                 
-                                # 기존 본문 크롤링 유지
+                                # 본문 크롤링 및 길이 제한
                                 content_elem = driver.find_element(By.ID, 'dic_area')
                                 if content_elem:
                                     content = content_elem.text.strip()
-                                    # 첫 3문장 추출
-                                    sentences = [s.strip() + '.' for s in content.split('.') if s.strip()]
-                                    summary = ' '.join(sentences[:3])
-                                    
+                                    # 250자로 제한하고 ... 추가
+                                    summary = content[:250].strip()
+                                    if len(content) > 250:
+                                        summary += '...'
+                                
                             except Exception as e:
                                 logger.error(f"본문 크롤링 실패: {str(e)}")
                             
