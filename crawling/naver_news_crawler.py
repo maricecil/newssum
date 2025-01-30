@@ -99,30 +99,64 @@ class NaverNewsCrawler:
             
             for idx, article in enumerate(articles, 1):
                 try:
-                    # 이미지가 있는 기사와 없는 기사 모두 처리
-                    link = article.select_one('a._es_pc_link, a.list_img')
-                    title_elem = article.select_one('strong.list_title, strong.list_text')
-                    
-                    # 이미지 요소 찾기
+                    # 기존 이미지 처리 유지
                     img_container = article.select_one('div.list_img')
                     image_url = None
                     if img_container:
                         img_elem = img_container.select_one('img')
                         if img_elem and 'src' in img_elem.attrs:
                             image_url = img_elem['src']
-                            logger.info(f"Found image URL: {image_url}")  # 디버깅용 로그
+                    
+                    # 제목과 링크 가져오기
+                    link = article.select_one('a._es_pc_link, a.list_img')
+                    title_elem = article.select_one('strong.list_title, strong.list_text')
                     
                     if title_elem and link:
                         title = title_elem.get_text(strip=True)
                         url = link['href']
+                        if not url.startswith('http'):
+                            url = f"https://n.news.naver.com{url}"
+                        
+                        # 1위 기사만 본문 크롤링
+                        summary = ''
+                        if idx == 1:
+                            driver.get(url)
+                            time.sleep(2)
+                            
+                            try:
+                                # 본문 이미지 찾기 (추가)
+                                try:
+                                    main_img = driver.find_element(By.CSS_SELECTOR, '.end_photo_org img')
+                                    if main_img:
+                                        high_quality_url = main_img.get_attribute('src')
+                                        if high_quality_url:
+                                            image_url = high_quality_url
+                                except:
+                                    pass  # 이미지를 찾지 못하면 기존 이미지 URL 유지
+                                
+                                # 기존 본문 크롤링 유지
+                                content_elem = driver.find_element(By.ID, 'dic_area')
+                                if content_elem:
+                                    content = content_elem.text.strip()
+                                    # 첫 3문장 추출
+                                    sentences = [s.strip() + '.' for s in content.split('.') if s.strip()]
+                                    summary = ' '.join(sentences[:3])
+                                    
+                            except Exception as e:
+                                logger.error(f"본문 크롤링 실패: {str(e)}")
+                            
+                            # 랭킹 페이지로 돌아가기
+                            driver.get(f"https://media.naver.com/press/{company_code}/ranking")
+                            time.sleep(2)
                         
                         news_items.append({
                             'company_code': company_code,
                             'company_name': self.news_companies[company_code],
                             'title': title,
-                            'url': url if url.startswith('http') else f"https://n.news.naver.com{url}",
+                            'url': url,
                             'rank': idx,
-                            'image_url': image_url,  # 이미지 URL 추가
+                            'image_url': image_url,
+                            'summary': summary,
                             'crawled_at': datetime.now()
                         })
                         
