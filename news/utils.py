@@ -1095,39 +1095,6 @@ async def _get_gpt_response(prompt, temperature=0.7, max_tokens=300, split_secti
         }
         return error_response
 
-async def analyze_news_with_gpt(article_text, max_tokens=150):
-    """
-    개별 뉴스 기사를 분석하는 함수
-    입력: 기사 전문
-    출력: 요약, 키워드, 관점 분석
-    """
-    try:
-        analysis_prompt = f"""
-        다음 뉴스 기사를 분석해주세요:
-
-        {article_text}
-
-        분석 요청:
-        1. 핵심 내용 요약 (2-3줄):
-        2. 주요 키워드 (콤마로 구분):
-        3. 기사의 관점/톤 (1줄):
-        """
-
-        return await _get_gpt_response(
-            analysis_prompt,
-            temperature=0.3,
-            max_tokens=max_tokens,
-            split_sections=True
-        )
-
-    except Exception as e:
-        logger.error(f"뉴스 분석 중 오류 발생: {str(e)}")
-        return {
-            'summary': '분석 중 오류가 발생했습니다.',
-            'keywords': '분석 중 오류가 발생했습니다.',
-            'perspective': '분석 중 오류가 발생했습니다.'
-        }
-
 def analyze_keywords_with_llm_sync(keywords_with_counts, titles, max_tokens=150):
     """
     비동기 분석 함수를 동기 환경에서 호출하기 위한 래퍼
