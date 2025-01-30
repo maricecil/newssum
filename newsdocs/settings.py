@@ -129,6 +129,11 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
+        'cache': {  # 캐시 관련 로그 추가
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
     },
 }
 
@@ -150,11 +155,21 @@ CACHES = {
             'MAX_ENTRIES': 1000,  # 최대 캐시 항목 수
             'CULL_FREQUENCY': 3,  # 정리 빈도
         }
+    },
+    'file_backup': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.path.join(BASE_DIR, 'django_cache'),
+        'TIMEOUT': CACHE_TIMEOUT * 2,  # 메모리 캐시의 2배
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
     }
 }
 
-# API 타임아웃 설정
-API_TIMEOUT = 30  # 초 단위
+# 캐시 파일 백업 설정
+CACHE_BACKUP_DIR = os.path.join(BASE_DIR, 'cache_backup')
+if not os.path.exists(CACHE_BACKUP_DIR):
+    os.makedirs(CACHE_BACKUP_DIR)
 
 # 연결 재시도 설정
 MAX_RETRIES = 3

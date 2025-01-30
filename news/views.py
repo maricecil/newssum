@@ -40,126 +40,167 @@ def atomic_cache(func):
 
 @atomic_cache
 def news_list(request):
-    print("=== 뉴스 목록 조회 시작 ===")  # 일단 print로 확인
-    # 캐시 타임아웃을 settings에서 가져오기
-    CACHE_TIMEOUT = getattr(settings, 'CACHE_TIMEOUT', 3600)  # 기본값 30분
+    logger.info("=== 뉴스 목록 조회 시작 ===")
+    CACHE_TIMEOUT = getattr(settings, 'CACHE_TIMEOUT', 3600)
     
-    # 캐시된 데이터 확인 시 타임아웃도 함께 체크
-    cached_data = cache.get('news_data')
-    last_update = cache.get('last_update')
-    now = timezone.now()  # timezone 사용
-    
-    # 캐시 타임아웃 체크 (15분)
-    if cached_data and last_update and (now - last_update).seconds < CACHE_TIMEOUT:
-        return render(request, 'news/news_list.html', cached_data)
-    
-    news_items = cache.get('news_rankings')
-    previous_keywords = cache.get('previous_keywords', [])
-    last_update = datetime.now()
-    
-    if news_items is None:
-        print("크롤링 시작")  # 크롤링 시작 확인
-        crawler = NaverNewsCrawler()
-        df = crawler.crawl_all_companies()
-        df = df.sort_values(['company_name', 'rank'])
-        news_items = df.to_dict('records')
-        print(f"크롤링 완료: {len(news_items)}개 기사")  # 크롤링 결과 확인
-        crawled_time = timezone.now()  # 크롤링 시간 저장
+    try:
+        # 1. 크롤링 상태 확인
+        is_crawling = cache.get('crawling_in_progress')
+        cached_data = cache.get('news_data')
+        last_update = cache.get('last_update')
+        now = timezone.now()
         
+        # 크롤링 중이면서 캐시가 있으면 캐시 사용
+        if is_crawling and cached_data:
+            logger.info("크롤링 진행 중 - 캐시 데이터 사용")
+            return render(request, 'news/news_list.html', cached_data)
+        
+        # 유효한 캐시가 있으면 반환
+        if cached_data and last_update and (now - last_update).seconds < CACHE_TIMEOUT:
+            logger.info("캐시된 데이터 사용")
+            return render(request, 'news/news_list.html', cached_data)
+        
+        news_items = cache.get('news_rankings')
+        previous_keywords = cache.get('previous_keywords', [])
+        last_update = timezone.now()
+        
+        # 2. 크롤링 시도
+        if news_items is None:
+            logger.info("크롤링 시작")
+            cache.set('crawling_in_progress', True, timeout=300)  # 5분 타임아웃
+            crawler = NaverNewsCrawler()
+            
+            try:
+                df = crawler.crawl_all_companies()
+                if df is not None and not df.empty:
+                    df = df.sort_values(['company_name', 'rank'])
+                    news_items = df.to_dict('records')
+                    logger.info(f"크롤링 완료: {len(news_items)}개 기사")
+                else:
+                    raise Exception("크롤링 결과가 없습니다.")
+                    
+            except Exception as e:
+                logger.error(f"크롤링 실패: {str(e)}")
+                # 3. 크롤링 실패 시 백업 데이터 사용
+                backup_data = crawler.restore_from_backup()
+                if backup_data:
+                    logger.info("백업 데이터 사용")
+                    news_items = backup_data.get('news_items', [])
+                    last_update = backup_data.get('last_update', now)
+                elif cached_data:  # 4. 백업도 없으면 마지막 캐시 재사용
+                    logger.info("마지막 캐시 데이터 재사용")
+                    cache.delete('crawling_in_progress')
+                    return render(request, 'news/news_list.html', cached_data)
+            finally:
+                cache.delete('crawling_in_progress')
+        
+        if not news_items:
+            logger.error("뉴스 데이터를 가져올 수 없습니다.")
+            return render(request, 'news/error.html', {'message': '뉴스를 불러올 수 없습니다.'})
+        
+        crawled_time = timezone.now()
+        
+        # 키워드 추출 및 캐시 설정
         all_titles = [item['title'] for item in news_items]
         current_keywords = extract_keywords(all_titles)
         
-        # 하드코딩된 300 대신 settings의 TIMEOUT 사용
         cache.set('previous_keywords', current_keywords, timeout=CACHE_TIMEOUT)
         cache.set('news_rankings', news_items, timeout=CACHE_TIMEOUT)
         cache.set('crawled_time', crawled_time, timeout=CACHE_TIMEOUT)
-    else:
-        # 캐시된 크롤링 시간 가져오기
-        crawled_time = cache.get('crawled_time')
-    
-    # 크롤링된 기사 수 출력
-    logger.info(f"Total news items: {len(news_items)}")
-    
-    # 일간 주요 뉴스 준비 (각 신문사의 1위 기사)
-    daily_rankings = [
-        item for item in news_items 
-        if item.get('rank') == 1
-    ]
-    
-    # 전체 기사에서 키워드 랭킹 추출
-    all_titles = [item['title'] for item in news_items]
-    keyword_rankings = extract_keywords(all_titles)
-    
-    # 디버깅용 출력도 제거
-    # print("Previous keywords:", previous_keywords)
-    # print("Current keywords:", keyword_rankings)
-    
-    # LLM 분석 (동기 버전 사용)
-    llm_analysis = analyze_keywords_with_llm_sync(
-        keywords_with_counts=keyword_rankings,
-        titles=news_items  # 전체 기사 데이터 전달
-    )
-    
-    # news_by_company 딕셔너리 생성 수정
-    news_by_company = {}
-    for item in news_items:
-        company = item.get('company_name', '')  # get 메서드로 안전하게 접근
-        if company:  # company가 존재할 때만 처리
-            if company not in news_by_company:
-                news_by_company[company] = []
-            news_by_company[company].append(item)
-    
-    context = {
-        'news_items': news_items,
-        'daily_rankings': daily_rankings,
-        'keyword_rankings': keyword_rankings,
-        'previous_keywords': previous_keywords,
-        'crawled_time': crawled_time,  # 크롤링 시간 추가
-        'refresh_interval': settings.CACHES['default']['TIMEOUT'],
-        'llm_analysis': llm_analysis,
-        'news_by_company': news_by_company,
-    }
-    
-    # 언론사별 키워드 분석 추가
-    company_keyword_stats = {}
-    for item in news_items:
-        company = item['company_name']
-        if company not in company_keyword_stats:
-            company_keyword_stats[company] = {'total': 0, 'keywords': {}}
-            
-        # 각 기사의 제목에서 키워드 매칭
-        for keyword, count, _ in keyword_rankings:
-            if keyword in item['title']:
-                company_keyword_stats[company]['total'] += 1
-                if keyword not in company_keyword_stats[company]['keywords']:
-                    company_keyword_stats[company]['keywords'][keyword] = 0
-                company_keyword_stats[company]['keywords'][keyword] += 1
-    
-    context.update({
-        'company_keyword_stats': company_keyword_stats,
-    })
-    
-    # 여기에 캐시 업데이트 추가
-    cache.set('news_data', context, timeout=CACHE_TIMEOUT)
-    cache.set('last_update', now, timeout=CACHE_TIMEOUT)
-    
-    if request.resolver_match.url_name == 'top_articles':
-        # 제목 리스트 추출
-        titles = []
-        for company, articles in news_by_company.items():
-            titles.extend([article.title for article in articles])
         
-        # LLM 분석 추가
+        # 일간 주요 뉴스 준비
+        daily_rankings = [
+            item for item in news_items 
+            if item.get('rank') == 1
+        ]
+        
+        # 키워드 랭킹 추출
+        keyword_rankings = extract_keywords(all_titles)
+        
+        # LLM 분석
         llm_analysis = analyze_keywords_with_llm_sync(
             keywords_with_counts=keyword_rankings,
             titles=news_items
         )
         
-        context.update({
+        # 언론사별 뉴스 그룹화
+        news_by_company = {}
+        for item in news_items:
+            company = item.get('company_name', '')
+            if company:
+                if company not in news_by_company:
+                    news_by_company[company] = []
+                news_by_company[company].append(item)
+        
+        # 컨텍스트 준비
+        context = {
+            'news_items': news_items,
+            'daily_rankings': daily_rankings,
+            'keyword_rankings': keyword_rankings,
+            'previous_keywords': previous_keywords,
+            'crawled_time': crawled_time,
+            'refresh_interval': settings.CACHES['default']['TIMEOUT'],
             'llm_analysis': llm_analysis,
+            'news_by_company': news_by_company,
+        }
+        
+        # 언론사별 키워드 분석
+        company_keyword_stats = {}
+        for item in news_items:
+            company = item['company_name']
+            if company not in company_keyword_stats:
+                company_keyword_stats[company] = {'total': 0, 'keywords': {}}
+            
+            for keyword, count, _ in keyword_rankings:
+                if keyword in item['title']:
+                    company_keyword_stats[company]['total'] += 1
+                    if keyword not in company_keyword_stats[company]['keywords']:
+                        company_keyword_stats[company]['keywords'][keyword] = 0
+                    company_keyword_stats[company]['keywords'][keyword] += 1
+        
+        context.update({
+            'company_keyword_stats': company_keyword_stats,
         })
-
-    return render(request, 'news/news_list.html', context)
+        
+        # 캐시 업데이트 및 백업
+        cache.set('news_data', context, timeout=CACHE_TIMEOUT)
+        cache.set('last_update', now, timeout=CACHE_TIMEOUT)
+        
+        # 백업 저장 로직 개선
+        if hasattr(crawler, 'backup_cache') and news_items:
+            backup_data = {
+                'news_items': news_items,
+                'last_update': now,
+                'context': context
+            }
+            crawler.backup_cache(backup_data)
+            logger.info("새로운 데이터 백업 완료")
+        
+        if request.resolver_match.url_name == 'top_articles':
+            llm_analysis = analyze_keywords_with_llm_sync(
+                keywords_with_counts=keyword_rankings,
+                titles=news_items
+            )
+            context.update({
+                'llm_analysis': llm_analysis,
+            })
+        
+        return render(request, 'news/news_list.html', context)
+        
+    except Exception as e:
+        logger.error(f"뉴스 목록 조회 중 오류 발생: {str(e)}")
+        cache.delete('crawling_in_progress')  # 에러 발생 시에도 크롤링 상태 해제
+        # 최후의 수단으로 백업 데이터 사용
+        try:
+            crawler = NaverNewsCrawler()
+            backup_data = crawler.restore_from_backup()
+            if backup_data and backup_data.get('context'):
+                logger.info("백업 데이터로 복구")
+                return render(request, 'news/news_list.html', backup_data['context'])
+        except Exception as backup_error:
+            logger.error(f"백업 복구 실패: {str(backup_error)}")
+        
+        return render(request, 'news/error.html', {'message': '일시적인 오류가 발생했습니다.'})
 
 def keyword_analysis(request, keyword=None):
     if keyword:
