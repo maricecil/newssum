@@ -33,7 +33,7 @@ class NaverNewsCrawler:
             '022': '세계일보',
             '469': '한국일보'
         }
-        self.CACHE_TIMEOUT = 1800  # 30분
+        self.CACHE_TIMEOUT = 3600  # 1시간
         # 백업 파일 경로 설정
         self.backup_dir = Path('cache_backup')
         self.backup_file = self.backup_dir / 'news_cache_backup.json'

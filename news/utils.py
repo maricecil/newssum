@@ -53,6 +53,8 @@ from asgiref.sync import sync_to_async
 import asyncio
 from openai import AsyncOpenAI
 import json
+from datetime import datetime
+import inspect
 
 # 로거 설정
 logger = logging.getLogger('news')
@@ -370,7 +372,8 @@ stop_words = {
     '렌스', '스키', '프스', '브스', '드스', '록스', '기주', '미기', '에르', '도부', '머그',
 
     # 17. 기타 명사
-    '배달', '참모들', '사람', '피겨', '주말', '중앙', '괴롭힘', '체감', '보조', '적중', '당첨',
+    '배달', '참모들', '사람', '피겨', '주말', '중앙', '괴롭힘', '체감', '보조', '적중', '당첨', '호수', '그림자', '수차례', '여전', '눈치', '경제성', '진실성', '홍보', '징역', '하늘양',
+    '빈소', '살해', '살인', 
 }
 
 def extract_keywords(titles, limit=10, keywords_per_title=4):
@@ -973,9 +976,16 @@ async def _get_gpt_response(prompt, temperature=0.7, max_tokens=300, split_secti
     GPT API를 비동기로 호출하는 내부 유틸리티 함수
     """
     try:
+        logger.info("\n=== GPT API 호출 시작 ===")
+        logger.info(f"호출 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')}")
+        logger.info(f"호출 함수: {inspect.stack()[1].function}")  # 어느 함수에서 호출됐는지
+        logger.info(f"프롬프트 길이: {len(prompt)}")
+        logger.info(f"프롬프트 내용: {prompt[:200]}...")  # 프롬프트 앞부분 로깅
+        logger.info(f"요청 파라미터: temperature={temperature}, max_tokens={max_tokens}")
+        
         client = AsyncOpenAI()
         response = await client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": """
                 당신은 뉴스 분석 전문가입니다. 다음 규칙을 따라 분석해주세요:
@@ -993,6 +1003,13 @@ async def _get_gpt_response(prompt, temperature=0.7, max_tokens=300, split_secti
             stop=None,
             top_p=1.0
         )
+        
+        logger.info("\n=== GPT API 응답 ===")
+        logger.info(f"응답 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')}")
+        logger.info(f"응답 상태: {response.choices[0].finish_reason}")
+        logger.info(f"입력 토큰 수: {response.usage.prompt_tokens}")
+        logger.info(f"출력 토큰 수: {response.usage.completion_tokens}")
+        logger.info(f"총 토큰 수: {response.usage.total_tokens}")
         
         # finish_reason 체크 및 재시도
         finish_reason = response.choices[0].finish_reason
@@ -1085,7 +1102,12 @@ async def _get_gpt_response(prompt, temperature=0.7, max_tokens=300, split_secti
             }
             
     except Exception as e:
-        logger.error(f"GPT 분석 중 오류 발생: {str(e)}")
+        logger.error(f"\n=== GPT API 오류 발생 ===")
+        logger.error(f"오류 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')}")
+        logger.error(f"오류 타입: {type(e).__name__}")
+        logger.error(f"오류 메시지: {str(e)}")
+        logger.error(f"오류 발생 함수: {inspect.stack()[1].function}")
+
         error_response = {
             'success': False,
             'analysis': {
